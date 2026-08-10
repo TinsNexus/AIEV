@@ -5,9 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# Đổi user/nhóm cho khớp máy bạn (deploy/vps-setup.sh tạo sẵn user "deploy").
-User=deploy
-Group=deploy
+# User/Group của tiến trình chạy app - KHÔNG phải user SSH của deploy.sh, tuy
+# trên máy bạn hai cái đang trùng nhau (root). Nếu sau này tách lại user
+# "deploy" riêng cho an toàn hơn thì đổi 2 dòng này về "deploy" và chown lại
+# /opt/tisorr-studio.
+User=root
+Group=root
 WorkingDirectory=/opt/tisorr-studio
 # npm run start ở root chạy "concurrently" cả server (dist/index.js) lẫn web
 # (next start) trong một tiến trình cha - đúng như start.sh dùng khi chạy tay.

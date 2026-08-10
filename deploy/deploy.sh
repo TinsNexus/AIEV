@@ -35,7 +35,13 @@ log "build (server + web)"
 npm run build
 
 log "restart $SERVICE"
-sudo systemctl restart "$SERVICE"
+# root không cần (và có thể không xin được) mật khẩu để tự sudo chính mình -
+# chỉ gọi sudo khi thật sự cần leo quyền.
+if [ "$(id -u)" -eq 0 ]; then
+  systemctl restart "$SERVICE"
+else
+  sudo systemctl restart "$SERVICE"
+fi
 
 log "health check"
 OK=false
