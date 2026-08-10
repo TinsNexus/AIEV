@@ -1,11 +1,21 @@
 name: Deploy
 
-# Chỉ chạy khi publish một GitHub Release có tag dạng v* - đúng quy trình phát
-# hành ở CLAUDE.md mục 9 (release chỉ tạo từ commit đã qua CI xanh + build sạch).
+# Hai cách kích hoạt:
+#   1. Publish một GitHub Release có tag dạng v* - đúng quy trình phát hành ở
+#      CLAUDE.md mục 9 (release chỉ tạo từ commit đã qua CI xanh + build sạch).
+#   2. Chạy tay (workflow_dispatch, tab Actions -> Deploy -> Run workflow) -
+#      deploy lại một tag ĐÃ TỒN TẠI, tiện khi cần thử lại sau khi sửa secret/
+#      VPS mà không muốn tạo release mới.
 # Không deploy tự động theo mỗi push - tránh đẩy bản chưa duyệt lên VPS.
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag cần deploy (vd v1.2.0) - phải đã tồn tại trên origin"
+        required: true
+        type: string
 
 concurrency:
   group: deploy-vps
@@ -15,16 +25,34 @@ permissions:
   contents: read
 
 jobs:
+  # Gom logic "tag nào đang deploy" về một chỗ - release lấy từ
+  # github.event.release.tag_name, chạy tay lấy từ input - verify/deploy phía
+  # sau chỉ cần đọc needs.resolve.outputs.tag, không phải tự phân biệt trigger.
+  resolve:
+    name: Resolve deploy tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.pick.outputs.tag }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
   # Xây lại đúng commit mà tag trỏ tới TRƯỚC khi đụng vào VPS - phòng trường
   # hợp tag bị gắn nhầm hoặc CI trên nhánh main đã đổi khác kể từ lúc release.
   verify:
     name: Verify tagged commit builds
+    needs: resolve
     runs-on: ubuntu-latest
-    if: startsWith(github.event.release.tag_name, 'v')
+    if: startsWith(needs.resolve.outputs.tag, 'v')
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ needs.resolve.outputs.tag }}
 
       - uses: actions/setup-node@v5
         with:
@@ -41,7 +69,7 @@ jobs:
 
   deploy:
     name: Deploy to VPS
-    needs: verify
+    needs: [resolve, verify]
     runs-on: ubuntu-latest
     environment: tinnt-vps-pro
     steps:
@@ -60,4 +88,4 @@ jobs:
           script: |
             REPO_PATH="${{ secrets.VPS_PATH }}"
             REPO_PATH="${REPO_PATH:-/opt/tisorr-studio}"
-            bash "$REPO_PATH/deploy/deploy.sh" "${{ github.event.release.tag_name }}"
+            bash "$REPO_PATH/deploy/deploy.sh" "${{ needs.resolve.outputs.tag }}"
