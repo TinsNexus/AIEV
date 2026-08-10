@@ -36,6 +36,6 @@ Logo thương hiệu **khác** (Meta, TikTok, OpenAI…) không thuộc đây �
 | Code đọc/ghi những file này | MIT, như cả repo |
 | File font bạn tải hoặc upload | Giấy phép riêng của font đó (Google Fonts phần lớn là SIL OFL) |
 | Logo bạn upload | Của bạn |
-| Logo và tên **noti.vn** | Nhãn hiệu của noti.vn, **không** nằm trong giấy phép MIT |
+| Logo và tên **Tisorr** | Nhãn hiệu của Tisorr, **không** nằm trong giấy phép MIT |
 
 Thư mục này đã được cấu hình để **không commit `styles.json` lẫn `files/` lên git** — chỉ README này được theo dõi. File font, logo và các style của bạn ở lại máy bạn.

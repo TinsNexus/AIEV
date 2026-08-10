@@ -37,7 +37,7 @@ Manifest fields beyond scenes/captions/overlays (see `manifest.ts`):
 - `watermark` - the Style Design corner logo, stamped by the SERVER (`jobs/assemble.ts`), never by the AI; `null` = the style has no logo.
 - `audio.music` - background music `{ file, volume, duckVolume, speech: [[startSec,endSec],...] }` with deterministic ducking over speech ranges (see the `background-music` skill); `null` = no music.
 - `scenes[].zoom` - camera move on footage `{ origin?, keys: [{frame, scale, ease?}] }`; `frame` counts from the START OF THE SCENE, applied to the wrapper div (never the video element).
-- `audio.sfx[].mediaStart` - seconds skipped at the head of the sfx file (lead silence trim, see noti-tiktok-vn "SFX loudness and lead silence").
+- `audio.sfx[].mediaStart` - seconds skipped at the head of the sfx file (lead silence trim, see tisorr-tiktok-vn "SFX loudness and lead silence").
 
 ## Core principles
 

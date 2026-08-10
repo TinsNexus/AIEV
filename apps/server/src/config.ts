@@ -65,29 +65,29 @@ export function upsertEnvVar(name: string, value: string | null): void {
 let cachedApiToken: string | null = null;
 
 /**
- * Token xác thực API dùng chung (AIEV_API_TOKEN trong .env).
+ * Token xác thực API dùng chung (XTS_API_TOKEN trong .env).
  * Chưa có → tự sinh và ghi vào .env ngay lần gọi đầu, nên máy mới clone repo
  * không phải cấu hình gì. Mọi request KHÔNG phải loopback trực tiếp đều phải
- * kèm token này (header `x-aiev-token`, query `?t=`, hoặc cookie `aiev_token`),
+ * kèm token này (header `x-xts-token`, query `?t=`, hoặc cookie `xts_token`),
  * trừ đường upload từ điện thoại dùng token phiên QR (`?k=`).
  */
 export function apiToken(): string {
   if (cachedApiToken) return cachedApiToken;
-  const fromEnv = (process.env.AIEV_API_TOKEN ?? "").trim();
+  const fromEnv = (process.env.XTS_API_TOKEN ?? "").trim();
   if (fromEnv) {
     cachedApiToken = fromEnv;
     return cachedApiToken;
   }
   const generated = nanoid(32);
   try {
-    upsertEnvVar("AIEV_API_TOKEN", generated);
+    upsertEnvVar("XTS_API_TOKEN", generated);
   } catch (err) {
     // Không ghi được .env (read-only) - vẫn chạy được trong phiên này
     console.warn(
-      `[config] Không ghi được AIEV_API_TOKEN vào .env: ${err instanceof Error ? err.message : String(err)}`,
+      `[config] Không ghi được XTS_API_TOKEN vào .env: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
-  process.env.AIEV_API_TOKEN = generated;
+  process.env.XTS_API_TOKEN = generated;
   cachedApiToken = generated;
   return generated;
 }

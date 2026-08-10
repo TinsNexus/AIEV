@@ -1,6 +1,6 @@
-# AIEV - AI Edit Video by [noti.vn](https://noti.vn)
+# XTS - Tisorr Studio by Tisorr
 
-[![CI](https://github.com/notivn/AIEV/actions/workflows/ci.yml/badge.svg)](https://github.com/notivn/AIEV/actions/workflows/ci.yml)
+[![CI](https://github.com/tinnt-truman/AIEV/actions/workflows/ci.yml/badge.svg)](https://github.com/tinnt-truman/AIEV/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
 
 [🇬🇧 English](README.md) · 🇻🇳 Tiếng Việt
@@ -100,7 +100,7 @@ cài được - xem [Kiểm tra môi trường](#kiểm-tra-môi-trường) bên
 ## Chạy
 
 ```bash
-git clone https://github.com/notivn/AIEV.git
+git clone https://github.com/tinnt-truman/AIEV.git
 cd AIEV
 ```
 
@@ -208,7 +208,7 @@ sửa đúng một chỗ.
 Trong trang project, ở card **Nguồn & Asset** bấm **Kết nối điện thoại** - quét mã QR bằng camera điện thoại (cùng WiFi với máy chạy hệ thống) để mở trang upload `http://<ip-máy>:6868/m/<project>`. Video/ảnh chọn trên điện thoại sẽ tải thẳng vào asset của project. Lần đầu Windows hỏi firewall thì chọn **Allow** (script start đã tự thêm rule nếu có quyền admin).
 
 **Dùng từ xa qua 4G/5G** (không cùng WiFi):
-- **Cloudflare Tunnel** - điền `TUNNEL_DOMAIN=<domain-của-bạn>` (vd `aiev.noti.vn`) vào `.env`, QR trong modal Kết nối điện thoại sẽ tự dùng `https://<domain>/m/<project>` - chạy được qua 4G/5G.
+- **Cloudflare Tunnel** - điền `TUNNEL_DOMAIN=<domain-của-bạn>` (vd `aiev.example.com`) vào `.env`, QR trong modal Kết nối điện thoại sẽ tự dùng `https://<domain>/m/<project>` - chạy được qua 4G/5G.
 - Bật tunnel bằng `start\tunnel.bat` (Windows) / `./start/tunnel.sh` (macOS) - chưa điền `TUNNEL_DOMAIN` thì script tự chạy quick tunnel với URL ngẫu nhiên `trycloudflare.com`.
 - ⚠️ **Cảnh báo**: dashboard chưa có đăng nhập - chỉ mở public khi đã bọc Cloudflare Access, hoặc tuyệt đối không chia sẻ link.
 
@@ -258,7 +258,7 @@ Giấy phép MIT ở trên áp cho **code**. Media thì mỗi thứ một giấy
 | [`assets/music/`](assets/music/README.md) | Không - ship rỗng | Của nguồn bạn lấy |
 | [`assets/styles/`](assets/styles/README.md) | Không - ship rỗng | Style, font và logo là của bạn |
 | [`assets/brand-logos/`](assets/brand-logos/README.md) | Có, 123 logo | **Nhãn hiệu của chủ thương hiệu**, KHÔNG thuộc MIT |
-| Tên và logo **noti.vn** trên dashboard | Có | **Nhãn hiệu của noti.vn**, KHÔNG thuộc MIT |
+| Tên và logo **Tisorr** trên dashboard | Có | **Nhãn hiệu của Tisorr**, KHÔNG thuộc MIT |
 
 **Sound effect đi kèm nhưng có điều kiện.** Bộ 86 file này là đồ sưu tầm nhiều năm từ nhiều nguồn, không ghi lại giấy phép của từng file. Nó có mặt để cài xong là dùng được ngay, nhưng **không dùng cho video thương mại** - không ai chứng minh được quyền với chúng. Làm thương mại thì thay dần bằng nguồn CC0 hoặc đã mua giấy phép, và ghi `source` + `license` cho từng file. Một số trích đoạn nhận ra ngay là của ai (jingle Netflix, nhạc Nintendo, SpongeBob…) thì không đi kèm repo, dù danh mục vẫn còn tên.
 
@@ -268,8 +268,8 @@ Font cũng vậy, nhưng có sẵn lối đi: gõ tên font trong **Style Design
 
 Style Design ship rỗng vì lý do khác: đó là nhận diện thương hiệu của riêng bạn. Repo mang sẵn style của người khác thì ai clone về cũng dựng video bằng màu của họ, và nếu style đó có logo thì video bị đóng dấu logo người khác. Lần đầu vào trang Style Design, tạo style của bạn - nó tự thành mặc định.
 
-Fork dự án này thì nhớ thay logo và tên noti.vn bằng của bạn: thay PNG trong `apps/web/public/brand/` rồi chạy `node apps/web/scripts/build-brand.mjs`.
+Fork dự án này thì nhớ thay logo và tên Tisorr bằng của bạn: thay PNG trong `apps/web/public/brand/` rồi chạy `node apps/web/scripts/build-brand.mjs`.
 
 ---
 
-Made with ❤️ by **noti.vn** - Claude điều khiển, con người duyệt.
+Made with ❤️ by **Tisorr** - Claude điều khiển, con người duyệt.

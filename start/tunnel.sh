@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cloudflare Tunnel cho AI Edit Video - mở đường Internet về http://localhost:6868
+# Cloudflare Tunnel cho Tisorr Studio - mở đường Internet về http://localhost:6868
 # Có TUNNEL_DOMAIN trong .env → chạy named tunnel; chưa có → Quick Tunnel (URL ngẫu nhiên).
 set -u
 

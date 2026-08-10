@@ -1,6 +1,6 @@
 ---
 name: color-grading
-description: Color grading video in the AI Edit Video system - delog/tonemap HDR-HLG-log footage, apply the color preset the user approved in the UI, and the visual verification workflow. Read when the edit prompt has a "Chỉnh màu" (color grading) section, when the source footage is HDR/log, or when the user asks for grading/delog.
+description: Color grading video in the Tisorr Studio system - delog/tonemap HDR-HLG-log footage, apply the color preset the user approved in the UI, and the visual verification workflow. Read when the edit prompt has a "Chỉnh màu" (color grading) section, when the source footage is HDR/log, or when the user asks for grading/delog.
 ---
 
 # Color Grading - grading video footage

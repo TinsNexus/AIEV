@@ -1,8 +1,8 @@
-# Đóng góp cho AIEV
+# Đóng góp cho XTS
 
 [🇬🇧 English](CONTRIBUTING.md) · 🇻🇳 Tiếng Việt
 
-Cảm ơn bạn đã bỏ thời gian. Đây là dự án nhỏ do [noti.vn](https://noti.vn) duy trì, nên quy tắc ở đây ngắn gọn và thực dụng.
+Cảm ơn bạn đã bỏ thời gian. Đây là dự án nhỏ do Tisorr duy trì, nên quy tắc ở đây ngắn gọn và thực dụng.
 
 ## Trước khi bắt đầu
 
@@ -13,7 +13,7 @@ Cảm ơn bạn đã bỏ thời gian. Đây là dự án nhỏ do [noti.vn](htt
 ## Chạy dự án
 
 ```bash
-git clone https://github.com/notivn/AIEV.git
+git clone https://github.com/tinnt-truman/AIEV.git
 cd AIEV
 npm install
 npm run dev          # web ở http://localhost:6868, backend ở 6869

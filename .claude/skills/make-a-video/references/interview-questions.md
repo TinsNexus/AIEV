@@ -2,7 +2,7 @@
 
 Used by `/make-a-video` Gates 1–3. Ask one at a time via `AskUserQuestion`, multiple-choice where possible.
 
-> Routing note: when running from a project brief in the AI Edit Video pipeline, the edit prompt's
+> Routing note: when running from a project brief in the Tisorr Studio pipeline, the edit prompt's
 > STYLE DESIGN and PHONG CÁCH DỰNG (video style) sections override these interview defaults.
 
 ## Before asking anything - inventory first

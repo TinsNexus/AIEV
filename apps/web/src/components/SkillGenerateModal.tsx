@@ -61,7 +61,7 @@ const CAPTION_OPTIONS: {
 const NO_BASE = "";
 
 /** Skill mẫu gợi ý mặc định nếu tồn tại trong danh sách. */
-const SUGGESTED_BASE = "noti-tiktok-vn";
+const SUGGESTED_BASE = "tisorr-tiktok-vn";
 
 interface FormState {
   goal: string;

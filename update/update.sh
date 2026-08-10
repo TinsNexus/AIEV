@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Edit Video - cập nhật bản mới nhất từ GitHub rồi khởi động lại (macOS/Linux)
+# Tisorr Studio - cập nhật bản mới nhất từ GitHub rồi khởi động lại (macOS/Linux)
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -13,7 +13,7 @@ echo ""
 echo "===== $(date '+%Y-%m-%d %H:%M:%S') - bắt đầu cập nhật ====="
 
 echo ""
-echo "  AI Edit Video - CẬP NHẬT"
+echo "  Tisorr Studio - CẬP NHẬT"
 echo "  ========================="
 
 # 1. Kéo bản mới TRƯỚC KHI dừng hệ thống - pull fail thì hệ thống cũ vẫn chạy

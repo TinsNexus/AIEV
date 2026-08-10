@@ -150,7 +150,7 @@ dead weight, and the verification verdict. Take the numbers from `auto-trim-repo
 - Analyzing a `.cut.mp4` while the only transcript is the raw one -> the guard is aligned to the wrong
   timeline. Match the source file to the transcript that describes it.
 - SFX/narration files with their own lead silence -> use `data-media-start` to trim inside HyperFrames
-  (see "SFX loudness and lead silence" in the noti-tiktok-vn skill), do not re-encode an audio file
+  (see "SFX loudness and lead silence" in the tisorr-tiktok-vn skill), do not re-encode an audio file
   just for 0.3s of leading silence.
 - Joining cut segments without a fade -> a click at every join. Fixed in `autoTrim.ts`; the rule is
   below, and it applies to any new code that cuts or concatenates audio.

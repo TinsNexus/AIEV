@@ -1,8 +1,8 @@
-# Contributing to AIEV
+# Contributing to XTS
 
 🇬🇧 English · [🇻🇳 Tiếng Việt](CONTRIBUTING.vi.md)
 
-Thanks for taking the time. This is a small project maintained by [noti.vn](https://noti.vn), so the rules here are short and practical.
+Thanks for taking the time. This is a small project maintained by Tisorr, so the rules here are short and practical.
 
 ## Before you start
 
@@ -13,7 +13,7 @@ Thanks for taking the time. This is a small project maintained by [noti.vn](http
 ## Getting the project running
 
 ```bash
-git clone https://github.com/notivn/AIEV.git
+git clone https://github.com/tinnt-truman/AIEV.git
 cd AIEV
 npm install
 npm run dev          # web on http://localhost:6868, backend on 6869

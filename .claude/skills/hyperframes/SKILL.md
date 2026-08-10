@@ -26,7 +26,7 @@ Before writing ANY composition HTML, you MUST have a visual identity defined. Do
 
 Check in this order:
 
-0. **AI Edit Video pipeline?** If the edit prompt contains STYLE DESIGN / PHONG CÁCH DỰNG sections, those ARE the visual identity - use them directly and skip the rest of this gate (no DESIGN.md lookup, no questions to the user).
+0. **Tisorr Studio pipeline?** If the edit prompt contains STYLE DESIGN / PHONG CÁCH DỰNG sections, those ARE the visual identity - use them directly and skip the rest of this gate (no DESIGN.md lookup, no questions to the user).
 1. **DESIGN.md exists in the project?** → Read it. Use its exact colors, fonts, motion rules, and "What NOT to Do" constraints.
 2. **visual-style.md exists?** → Read it. Apply its `style_prompt_full` and structured fields. (Note: `visual-style.md` is a project-specific file. `visual-styles.md` is the style library with 8 named presets - different files.)
 3. **User named a style** (e.g., "Swiss Pulse", "dark and techy", "luxury brand")? → Read [visual-styles.md](./visual-styles.md) for the 8 named presets. Generate a minimal DESIGN.md with: `## Style Prompt` (one paragraph), `## Colors` (3-5 hex values with roles), `## Typography` (1-2 font families), `## What NOT to Do` (3-5 anti-patterns).
@@ -228,7 +228,7 @@ Every multi-scene composition MUST follow ALL of these rules. Violating any one 
 
 1. **ALWAYS use transitions between scenes.** No jump cuts. No exceptions.
 2. **ALWAYS use entrance animations on every scene.** Every element animates IN via `gsap.from()`. No element may appear fully-formed. If a scene has 5 elements, it needs 5 entrance tweens.
-3. **NEVER use exit animations** except on the final scene. This means: NO `gsap.to()` that animates opacity to 0, y offscreen, scale to 0, or any other "out" animation before a transition fires. The transition IS the exit. The outgoing scene's content MUST be fully visible at the moment the transition starts. Scope: this rule applies when using the framework's transition system. Format skills that run a continuous shared background (noti-tiktok-vn, noti-youtube-edit, noti-tiktok-full-text) handle exits INSIDE each scene's timeline instead - that dissolve-over-shared-background pattern is verified, do not "fix" it.
+3. **NEVER use exit animations** except on the final scene. This means: NO `gsap.to()` that animates opacity to 0, y offscreen, scale to 0, or any other "out" animation before a transition fires. The transition IS the exit. The outgoing scene's content MUST be fully visible at the moment the transition starts. Scope: this rule applies when using the framework's transition system. Format skills that run a continuous shared background (tisorr-tiktok-vn, tisorr-youtube-edit, tisorr-tiktok-full-text) handle exits INSIDE each scene's timeline instead - that dissolve-over-shared-background pattern is verified, do not "fix" it.
 4. **Final scene only:** The last scene may fade elements out (e.g., fade to black). This is the ONLY scene where `gsap.to(..., { opacity: 0 })` is allowed.
 
 **WRONG - exit animation before transition:**

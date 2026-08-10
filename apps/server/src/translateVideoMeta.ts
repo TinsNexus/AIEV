@@ -135,7 +135,7 @@ export interface SubtitleStyle {
  * cao 1080 (xem SubtitleTrack.tsx). Nhét một con số cho cả hai là phụ đề của
  * video ngang bị đẩy lên gần giữa khung.
  *  - 320 (dọc): nằm trên vùng nút của TikTok/Reels (~288)
- *  - 130 (ngang): chuẩn của skill noti-youtube-edit
+ *  - 130 (ngang): chuẩn của skill tisorr-youtube-edit
  */
 export const DEFAULT_BOTTOM_PX = { vertical: 320, horizontal: 130 } as const;
 

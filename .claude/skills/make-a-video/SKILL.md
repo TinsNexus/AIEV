@@ -19,7 +19,7 @@ Two phases, eight sequential gates. Every gate produces a concrete artifact the 
 - The user explicitly wants a 9:16 vertical talking-head with face-cam + scene overlays → run Gates 1–4 here, then invoke `/short-form-video` from Gate 5 onward
 - The user asks for framework rules, not a video → invoke `/hyperframes`
 
-**Routing note (AI Edit Video pipeline):** when this skill runs from a project brief, the edit prompt's
+**Routing note (Tisorr Studio pipeline):** when this skill runs from a project brief, the edit prompt's
 STYLE DESIGN and PHONG CÁCH DỰNG (video style) sections override the interview defaults below - do not
 re-ask style questions the brief already answers.
 
@@ -51,7 +51,7 @@ Full question bank: `Read: references/interview-questions.md`
 
 1. Script source? (paste · outline → I'll draft · I'll record · TTS from text · no narration)
 2. If TTS: voice preference. Offer choices from `npx hyperframes tts --help`. Also capture pace. `hyperframes tts` (Kokoro) is English-only - Vietnamese narration goes through the system's `/api/tts` (Gemini TTS or VieNeu) instead.
-3. If face-cam: recording path · full-screen or corner placement · need transcription? (`npx hyperframes transcribe <file> --model small.en --json` - English only; for Vietnamese use faster-whisper per the noti-tiktok-vn skill)
+3. If face-cam: recording path · full-screen or corner placement · need transcription? (`npx hyperframes transcribe <file> --model small.en --json` - English only; for Vietnamese use faster-whisper per the tisorr-tiktok-vn skill)
 4. Captions? (off · hype · corporate · karaoke-word-by-word · minimal)
 
 **Gate:** script captured (or drafted), audio plan captured, caption plan captured.
@@ -231,7 +231,7 @@ Hand the user `http://localhost:8080/<slug>-draft.mp4`. **WAIT for explicit sign
 npx hyperframes render --quality standard --output renders/<slug>-final.mp4
 ```
 
-In the AI Edit Video pipeline this is NOT the end: continue with the `video-pipeline` skill (QC → assemble final via the render queue → `outputs/<id>-v<N>.mp4` → update `meta.json` → thumbnail/publish). Standalone use outside the pipeline: report the output path. Done.
+In the Tisorr Studio pipeline this is NOT the end: continue with the `video-pipeline` skill (QC → assemble final via the render queue → `outputs/<id>-v<N>.mp4` → update `meta.json` → thumbnail/publish). Standalone use outside the pipeline: report the output path. Done.
 
 Full preflight + pre-delivery checklist: `Read: references/build-checklist.md`
 

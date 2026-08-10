@@ -87,7 +87,7 @@ router.post("/", (req, res) => {
   }
 
   const data = readStyles();
-  // Template: clone toàn bộ từ style nguồn, hoặc palette mặc định noti.vn cho style mới
+  // Template: clone toàn bộ từ style nguồn, hoặc palette mặc định Tisorr cho style mới
   const source =
     typeof body.cloneFrom === "string" ? findStyle(data, body.cloneFrom) : defaultStyle();
 

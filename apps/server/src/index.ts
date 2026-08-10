@@ -71,7 +71,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-aiev-token");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-xts-token");
   }
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -113,8 +113,8 @@ function allowedForUploadToken(req: Request): boolean {
  *  (b) /api/health - endpoint public, trả token cho loopback
  *  (c) request TRỰC TIẾP từ máy chủ (loopback, không qua proxy) - dashboard
  *      trên máy này, agent Claude, curl, script start
- *  (d) header `x-aiev-token` khớp AIEV_API_TOKEN (fetch của web dashboard)
- *  (e) cookie `aiev_token` khớp (img/video/EventSource - không set được header)
+ *  (d) header `x-xts-token` khớp XTS_API_TOKEN (fetch của web dashboard)
+ *  (e) cookie `xts_token` khớp (img/video/EventSource - không set được header)
  *  (f) query `?t=` khớp (mở dashboard qua tunnel bằng link có token)
  *  (g) query `?k=` là token phiên upload QR còn hiệu lực (trang /m)
  */
@@ -150,12 +150,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     return;
   }
   const token = apiToken();
-  const header = req.headers["x-aiev-token"];
+  const header = req.headers["x-xts-token"];
   if (typeof header === "string" && secretEquals(header, token)) {
     next();
     return;
   }
-  if (secretEquals(cookieValue(req, "aiev_token"), token)) {
+  if (secretEquals(cookieValue(req, "xts_token"), token)) {
     next();
     return;
   }
@@ -282,7 +282,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 const server = app.listen(SERVER_PORT, () => {
-  console.log(`[server] AI Edit Video backend chạy tại http://localhost:${SERVER_PORT}`);
+  console.log(`[server] Tisorr Studio backend chạy tại http://localhost:${SERVER_PORT}`);
   console.log(`[server] Repo root: ${repoRoot}`);
   // Dò môi trường sẵn (~6s, chạy trong tiến trình con) để trang Cấu hình mở là có ngay
   warmDoctorCache();

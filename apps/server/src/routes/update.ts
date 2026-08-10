@@ -292,7 +292,7 @@ router.post("/apply", async (_req, res) => {
     process.platform === "win32"
       ? spawn(
           "cmd.exe",
-          ["/c", "start", "AI Edit Video - UPDATE", "cmd", "/c", "update\\update.bat"],
+          ["/c", "start", "Tisorr Studio - UPDATE", "cmd", "/c", "update\\update.bat"],
           { cwd: repoRoot, detached: true, stdio: "ignore" },
         )
       : spawn("bash", ["update/update.sh"], {

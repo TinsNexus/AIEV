@@ -1,4 +1,4 @@
-﻿# AI Edit Video by noti.vn - dừng toàn bộ hệ thống (web 6868 + server 6869)
+﻿# Tisorr Studio by Tisorr - dừng toàn bộ hệ thống (web 6868 + server 6869)
 
 $ErrorActionPreference = "SilentlyContinue"
 $killed = 0
@@ -20,7 +20,7 @@ foreach ($port in 6868, 6869) {
 Remove-Item (Join-Path (Split-Path -Parent $PSScriptRoot) ".aievun.json") -ErrorAction SilentlyContinue
 
 if ($killed -gt 0) {
-    Write-Host "  [OK] Đã dừng hệ thống AI Edit Video ($killed process)." -ForegroundColor Green
+    Write-Host "  [OK] Đã dừng hệ thống Tisorr Studio ($killed process)." -ForegroundColor Green
 } else {
     Write-Host "  Hệ thống không chạy - không có gì để dừng." -ForegroundColor DarkGray
 }

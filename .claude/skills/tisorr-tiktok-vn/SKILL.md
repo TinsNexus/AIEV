@@ -1,5 +1,5 @@
 ---
-name: noti-tiktok-vn
+name: tisorr-tiktok-vn
 description: Edit a Vietnamese vertical TikTok video (9:16) with HyperFrames following the Noti.vn/GĐT standard - talking-head + kinetic typography + karaoke captions + zoom/punch-in camera + timestamp-synced sound effects, rendered to MP4. Ships with the verified fixes (gradient text dropping diacritics, Vietnamese transcription, ffmpeg PATH). Use when the user hands over a Vietnamese clip and wants it built into a TikTok video with animated text + subtitles + beat-synced zoom in the dark fintech blue style.
 ---
 

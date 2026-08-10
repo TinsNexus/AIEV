@@ -207,7 +207,7 @@ router.put("/domain", (req, res) => {
     throw new HttpError(
       400,
       "INVALID_DOMAIN",
-      `"${domain}" không phải hostname hợp lệ - ví dụ đúng: aiev.noti.vn`,
+      `"${domain}" không phải hostname hợp lệ - ví dụ đúng: aiev.example.com`,
     );
   }
   upsertEnvVar("TUNNEL_DOMAIN", domain || null);
@@ -241,7 +241,7 @@ router.post("/start", (req, res) => {
   const domain = envDomain();
   let args: string[];
   if (domain) {
-    // Named tunnel - tên tunnel = nhãn đầu của domain (aiev.noti.vn → aiev),
+    // Named tunnel - tên tunnel = nhãn đầu của domain (aiev.example.com → aiev),
     // giống start/tunnel.bat. Yêu cầu đã: cloudflared tunnel login/create/route dns.
     const name = domain.split(".")[0];
     mode = "named";

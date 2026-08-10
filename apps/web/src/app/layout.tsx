@@ -12,7 +12,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { EventsProvider } from "@/lib/useEvents";
 
 export const metadata: Metadata = {
-  title: "AI Edit Video by: noti.vn",
+  title: "Tisorr Studio by: Tisorr",
   description: "Edit video tự động bằng AI",
   // Data URI biên dịch vào bundle chứ không trỏ tới /brand/favicon.png: chép đè
   // file trong public/ không đổi được favicon của ứng dụng nữa. Xem

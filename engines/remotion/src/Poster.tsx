@@ -16,7 +16,7 @@ import type { PosterProps, PosterStat } from "./posterManifest";
  *   (thống nhất tông màu 2 vùng) → 3) scrim ELLIPSE neo ở góc chứa chữ
  *   (mép tan mọi hướng, không còn "đường biên vùng") → 4) glow primary
  *   sau khối title (nguồn sáng brand) + vài hạt accent dẫn mắt về phía ảnh.
- * - Chữ chuẩn Design System noti.vn: eyebrow badge (pill brandName) → title
+ * - Chữ chuẩn Design System Tisorr: eyebrow badge (pill brandName) → title
  *   đậm với từ khóa highlight gradient primary→secondary → kẻ gradient dưới
  *   khối title → subtitle/stats/CTA.
  *   ⚠️ Gradient text (background-clip: text) với TIẾNG VIỆT dễ cắt dấu:

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# AI Edit Video by noti.vn - dừng hệ thống (macOS / Linux)
+# Tisorr Studio by Tisorr - dừng hệ thống (macOS / Linux)
 set -u
 
-echo "  Đang dừng AI Edit Video..."
+echo "  Đang dừng Tisorr Studio..."
 STOPPED=false
 for port in 6868 6869; do
   PIDS="$(lsof -ti tcp:$port 2>/dev/null || true)"

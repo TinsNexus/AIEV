@@ -1,5 +1,5 @@
 @echo off
-title Cloudflare Tunnel - AI Edit Video
+title Cloudflare Tunnel - Tisorr Studio
 setlocal EnableExtensions
 cd /d "%~dp0.."
 

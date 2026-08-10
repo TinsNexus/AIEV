@@ -10,7 +10,7 @@ import type { HighlightCue } from "../manifest";
 import { useVietnameseFont, VIETNAMESE_FONT_FAMILY, vietnameseFontFaceCss } from "./vietnameseFont";
 
 /**
- * Overlay "làm nổi bật key chính" chạy TRÊN footage gốc (skill noti-tiktok-vn).
+ * Overlay "làm nổi bật key chính" chạy TRÊN footage gốc (skill tisorr-tiktok-vn).
  *
  * Khác `CaptionTrack`: đây KHÔNG phải phụ đề — không đọc theo từng từ, không
  * bám mọi câu. Mỗi cue là một key (chính hoặc phụ) do AI chọn từ transcript,
@@ -106,7 +106,7 @@ const Cue: React.FC<{ cue: HighlightCue; raised: boolean }> = ({
           // Pop từ mép neo: thẻ trên (main) nở từ trên, thẻ đáy nở từ dưới.
           transformOrigin: main ? "center top" : "center bottom",
           // Liquid Glass: blur + viền trắng mờ bằng box-shadow inset (KHÔNG
-          // border 1px cứng) + glow xanh nhẹ — Style Design "noti.vn".
+          // border 1px cứng) + glow xanh nhẹ — Style Design "Tisorr".
           background: "rgba(16,17,19,0.46)",
           backdropFilter: "blur(26px)",
           WebkitBackdropFilter: "blur(26px)",

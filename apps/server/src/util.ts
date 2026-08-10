@@ -123,9 +123,9 @@ export function cookieValue(req: Request, name: string): string {
 export function hasMasterToken(req: Request): boolean {
   const token = apiToken();
   if (!token) return false;
-  const header = req.headers["x-aiev-token"];
+  const header = req.headers["x-xts-token"];
   if (typeof header === "string" && secretEquals(header, token)) return true;
-  if (secretEquals(cookieValue(req, "aiev_token"), token)) return true;
+  if (secretEquals(cookieValue(req, "xts_token"), token)) return true;
   const t = req.query?.t;
   return typeof t === "string" && secretEquals(t, token);
 }

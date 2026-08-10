@@ -70,7 +70,7 @@ import { LOGO_DARK, LOGO_LIGHT } from "@/lib/brand";
 import { useT } from "@/lib/i18n";
 
 /** Mã nguồn dự án - hiện ở cuối sidebar, ngay trên badge phiên bản */
-const REPO_URL = "https://github.com/notivn/AIEV";
+const REPO_URL = "https://github.com/tinnt-truman/AIEV";
 
 const NAV_STORAGE_KEY = "aiev-nav";
 const PANEL_STORAGE_KEY = "aiev-panel";
@@ -343,9 +343,9 @@ export function Shell({ children }: { children: ReactNode }) {
                 Logo người dùng tải lên ở Style Design đi đường khác hẳn
                 (assets/styles → /media), chỉ dùng đóng dấu lên video. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_LIGHT} alt="noti.vn" className="logo-light h-7 w-auto" />
+            <img src={LOGO_LIGHT} alt="Tisorr" className="logo-light h-7 w-auto" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_DARK} alt="noti.vn" className="logo-dark h-7 w-auto" />
+            <img src={LOGO_DARK} alt="Tisorr" className="logo-dark h-7 w-auto" />
           </Link>
 
           {/* Nút gấp/mở rail KHÔNG còn ở header: nó nằm dưới đáy chính cái rail

@@ -42,7 +42,7 @@ const scaleAtFrame = (zoom: Zoom, frame: number): number => {
 
 /**
  * Lớp bọc camera-move: scale trên DIV, KHÔNG bao giờ animate width/height của
- * thẻ video (đóng băng frame — xem skill noti-tiktok-vn). `overflow: hidden` +
+ * thẻ video (đóng băng frame — xem skill tisorr-tiktok-vn). `overflow: hidden` +
  * video `object-fit: cover` để scale ≥ 1 không lộ mép nền.
  */
 const ZoomWrapper: React.FC<{ zoom?: Zoom; children: React.ReactNode }> = ({

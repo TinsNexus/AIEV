@@ -1,4 +1,4 @@
-# AI Edit Video by: noti.vn
+# Tisorr Studio by: Tisorr
 
 > Edit video tự động bằng AI — Claude điều khiển **HyperFrames** (dựng scene motion-graphics) và **Remotion** (lắp ráp timeline), giám sát qua **web dashboard** chạy ở port **6868**.
 
@@ -148,7 +148,7 @@ Cấm `text-[10px]`, `text-[11px]`, `text-[13px]`, `text-[15px]`, `text-base`, `
 - Font: **Inter** qua gói `@fontsource/inter` (import trong `layout.tsx`, đóng gói lúc build nên vẫn self-host, tuyệt đối không gọi CDN lúc chạy).
 - Icon: **100% SVG inline** (khuyến nghị bộ Lucide, stroke 1.5–2px). Tuyệt đối không icon font, không PNG icon, không emoji làm icon.
 - Sáng/tối chuyển được, **mặc định sáng**. Mọi màu khai báo bằng CSS custom properties — không hardcode hex trong component.
-- Metadata: title `AI Edit Video by: noti.vn`, description `Edit video tự động bằng AI`.
+- Metadata: title `Tisorr Studio by: Tisorr`, description `Edit video tự động bằng AI`.
 
 ### Design tokens (nguồn sự thật duy nhất)
 
@@ -175,9 +175,9 @@ Bảng dark tương ứng nằm trong skill `webui-design` — chỉ đổi giá
 
 | Asset | URL nguồn | Dùng khi |
 |---|---|---|
-| Logo dương bản | https://noti.vn/image/new/logo-duong-ban.png | Nền sáng (theme light) |
-| Logo âm bản | https://noti.vn/image/new/logo-am-ban.png | Nền tối (theme dark) |
-| Favicon | https://noti.vn/image/new/favicon.png | `<link rel="icon">` |
+| Logo dương bản | _chưa có domain — điền URL thật khi Tisorr có domain, tạm để trực tiếp trong `apps/web/public/brand/`_ | Nền sáng (theme light) |
+| Logo âm bản | _như trên_ | Nền tối (theme dark) |
+| Favicon | _như trên_ | `<link rel="icon">` |
 
 Tải về `apps/web/public/brand/` khi scaffold web UI — không hotlink lúc runtime.
 

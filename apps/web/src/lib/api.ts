@@ -764,15 +764,15 @@ export class ApiError extends Error {
  *    (không qua proxy Next) nên backend trả kèm `apiToken`. Chỉ trình duyệt
  *    chạy trên chính máy chủ mới lấy được.
  *
- * Token được gắn vào: header `x-aiev-token` (mọi fetch) VÀ cookie `aiev_token`
+ * Token được gắn vào: header `x-xts-token` (mọi fetch) VÀ cookie `xts_token`
  * (để <img>/<video>/EventSource - thứ không set được header - vẫn qua được).
  *
  * Trang /m trên điện thoại KHÔNG dùng token này: nó đi bằng token phiên QR
  * (`?k=`) mà backend chỉ cho xem project + upload asset.
  */
-const TOKEN_KEY = "aiev_api_token";
+const TOKEN_KEY = "xts_api_token";
 /** Tên cookie PHẢI khớp với middleware xác thực của backend (index.ts) */
-const TOKEN_COOKIE = "aiev_token";
+const TOKEN_COOKIE = "xts_token";
 
 let apiToken: string | null = null;
 let tokenPromise: Promise<string | null> | null = null;
@@ -855,7 +855,7 @@ function withUploadToken(path: string): string {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await ensureToken();
   const headers = new Headers(init?.headers);
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -1285,7 +1285,7 @@ export async function generateSkill(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { "x-aiev-token": token } : {}),
+        ...(token ? { "x-xts-token": token } : {}),
       },
       body: JSON.stringify(input),
     });
@@ -1737,7 +1737,7 @@ export function closePhoneSessionOnUnload(uploadToken: string | null, stopAuto: 
   // lúc trang đang chết thì không kịp await ensureToken()
   const token = apiToken;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["x-aiev-token"] = token;
+  if (token) headers["x-xts-token"] = token;
   if (uploadToken) {
     void fetch(`/api/upload-session/${encodeURIComponent(uploadToken)}`, {
       method: "DELETE",
@@ -1767,7 +1767,7 @@ export const revealFile = (relPath: string) =>
 /**
  * Đường dẫn phát file qua backend, relPath tính từ repo root. Phòng thủ với dữ
  * liệu lệch kiểu (AI ghi meta sai hợp đồng).
- * Xác thực: dashboard đi bằng cookie `aiev_token` (ensureToken đã set trước khi
+ * Xác thực: dashboard đi bằng cookie `xts_token` (ensureToken đã set trước khi
  * dữ liệu về); trang /m trên điện thoại gắn thêm `?k=` của phiên QR.
  */
 export const mediaUrl = (relPath: string) =>
@@ -1901,7 +1901,7 @@ export const createSubtitles = (projectId: string) =>
 
 /**
  * Link TẢI phụ đề - dùng cho <a download>, không qua fetch nên không set được
- * header token: dashboard đi bằng cookie `aiev_token` (ensureToken đã set),
+ * header token: dashboard đi bằng cookie `xts_token` (ensureToken đã set),
  * trang /m gắn thêm `?k=` giống mediaUrl.
  * `version` để trình duyệt không trả file .srt cũ trong cache sau khi soạn lại.
  */
@@ -3062,7 +3062,7 @@ export async function previewTtsVoice(input: {
 }): Promise<Blob> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -3113,7 +3113,7 @@ export async function previewClonedVoice(input: {
 }): Promise<Blob> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -3589,7 +3589,7 @@ export async function dubPreviewTranslateVideo(
 ): Promise<DubPreviewResult> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {

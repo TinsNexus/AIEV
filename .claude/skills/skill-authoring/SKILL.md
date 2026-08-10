@@ -1,6 +1,6 @@
 ---
 name: skill-authoring
-description: The standard for writing new skills for the AI Edit Video system - file structure, frontmatter, tone of voice, and how to accumulate production lessons into skills. Read when the user asks to create a new skill (via chat or from the Skills page in the web UI) or when updating a skill after finishing a video.
+description: The standard for writing new skills for the Tisorr Studio system - file structure, frontmatter, tone of voice, and how to accumulate production lessons into skills. Read when the user asks to create a new skill (via chat or from the Skills page in the web UI) or when updating a skill after finishing a video.
 ---
 
 # Skill Authoring - writing skills the right way

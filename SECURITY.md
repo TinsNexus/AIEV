@@ -6,7 +6,7 @@
 
 **Please do not open a public issue for a security problem.**
 
-Use GitHub's private reporting instead: [**Report a vulnerability**](https://github.com/notivn/AIEV/security/advisories/new). It is private between you and the maintainer until a fix is out.
+Use GitHub's private reporting instead: [**Report a vulnerability**](https://github.com/tinnt-truman/AIEV/security/advisories/new). It is private between you and the maintainer until a fix is out.
 
 Include what you can: what an attacker can do, how to reproduce it, and the commit you tested. A proof of concept helps a lot. This is a small project maintained by one person, so expect a first reply within a few days rather than within hours.
 
@@ -25,7 +25,7 @@ The project runs on your own machine and holds credentials for Claude and Gemini
 
 These are deliberate and documented, so please do not report them as findings:
 
-- **The dashboard trusts loopback.** Any process running as your user on the same machine can read the API token from `/api/health` and drive the system. AIEV is built for a single-user workstation, not for shared or multi-tenant hosting.
+- **The dashboard trusts loopback.** Any process running as your user on the same machine can read the API token from `/api/health` and drive the system. XTS is built for a single-user workstation, not for shared or multi-tenant hosting.
 - **Exposing the dashboard to the internet is the operator's responsibility.** The Cloudflare Tunnel option exists for phone uploads; the README says plainly to put Cloudflare Access in front of it or not share the link. An open tunnel is a configuration choice, not a bug in the code.
 - **The AI agent runs with real tool permissions on your machine**, bounded by `.claude/settings.json`. That is the product, not a flaw. What *is* a flaw is any path that escapes those bounds.
 - **API keys sit in `.env` in plaintext**, like most local developer tooling.
@@ -42,7 +42,7 @@ Only the current `main` branch is supported. There are no long-lived release bra
 
 **Xin đừng mở issue công khai cho vấn đề bảo mật.**
 
-Hãy dùng kênh riêng của GitHub: [**Report a vulnerability**](https://github.com/notivn/AIEV/security/advisories/new). Nội dung chỉ có bạn và người duy trì repo thấy cho tới khi có bản vá.
+Hãy dùng kênh riêng của GitHub: [**Report a vulnerability**](https://github.com/tinnt-truman/AIEV/security/advisories/new). Nội dung chỉ có bạn và người duy trì repo thấy cho tới khi có bản vá.
 
 Ghi được gì thì ghi: kẻ tấn công làm được gì, cách tái hiện, và commit bạn đã thử. Có mã minh họa thì càng tốt. Dự án do một người duy trì, nên bạn hãy chờ phản hồi trong vài ngày chứ không phải vài giờ.
 
@@ -61,7 +61,7 @@ Hệ thống chạy trên máy của chính bạn và giữ khóa Claude, Gemini
 
 Những điều sau là cố ý và đã ghi rõ trong tài liệu, xin đừng báo như một phát hiện:
 
-- **Dashboard tin tưởng loopback.** Mọi tiến trình chạy dưới tài khoản của bạn trên cùng máy đều đọc được API token từ `/api/health` và điều khiển được hệ thống. AIEV làm cho máy cá nhân một người dùng, không phải để host chung nhiều người.
+- **Dashboard tin tưởng loopback.** Mọi tiến trình chạy dưới tài khoản của bạn trên cùng máy đều đọc được API token từ `/api/health` và điều khiển được hệ thống. XTS làm cho máy cá nhân một người dùng, không phải để host chung nhiều người.
 - **Mở dashboard ra internet là trách nhiệm của người vận hành.** Tùy chọn Cloudflare Tunnel sinh ra để upload từ điện thoại; README đã nói thẳng là phải bọc Cloudflare Access hoặc tuyệt đối không chia sẻ link. Để tunnel mở toang là lựa chọn cấu hình, không phải lỗi của code.
 - **Agent AI chạy với quyền công cụ thật trên máy bạn**, trong giới hạn của `.claude/settings.json`. Đó là bản chất sản phẩm. Cái *đáng* báo là bất kỳ đường nào thoát khỏi giới hạn đó.
 - **Khóa API nằm trong `.env` dạng văn bản thường**, như phần lớn công cụ chạy máy cá nhân.

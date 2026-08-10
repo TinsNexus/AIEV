@@ -92,7 +92,7 @@ GET /api/lan-info
 Trang web `/m/<projectId>` (Next.js, không phải API) là trang upload tối giản cho điện thoại — mở qua QR
 trong modal "Kết nối điện thoại" ở card Nguồn & Asset (`http://<ip>:6868/m/<projectId>`).
 Upload từ điện thoại gọi THẲNG backend `http://<ip>:6869/api/assets` (không qua proxy Next — request dài qua proxy dễ kẹt). Server tắt `requestTimeout` cho upload dài và tự hủy request nếu 45s không nhận thêm dữ liệu (stall → SSE `upload` báo `error`).
-CORS của backend chấp nhận origin web UI trên LAN: `http://<ip-private>:6868` (localhost/127.0.0.1/192.168.x.x/10.x.x.x/172.16–31.x.x); start.ps1 mở firewall rule "AIEV API 6869".
+CORS của backend chấp nhận origin web UI trên LAN: `http://<ip-private>:6868` (localhost/127.0.0.1/192.168.x.x/10.x.x.x/172.16–31.x.x); start.ps1 mở firewall rule "XTS API 6869".
 
 ### Upload session (bảo mật link QR)
 
@@ -103,7 +103,7 @@ DELETE /api/upload-session/:token   → 204                                     
 
 URL/QR mang token qua query `?k=`; trang `/m` gửi lại qua field `token` (append TRƯỚC `file`). POST `/api/assets` từ máy KHÁC máy chủ (điện thoại LAN/tunnel - không phải loopback, hoặc có `x-forwarded-for`) bắt buộc token phiên upload hợp lệ, đúng project khi scope là `project` - sai/thiếu → `403 UPLOAD_TOKEN_INVALID` ("Link upload đã hết hạn — mở lại mã QR trên máy tính.").
 
-Ngoại lệ: request mang `AIEV_API_TOKEN` (header `x-aiev-token`, cookie `aiev_token` hoặc query `?t=`) được miễn token phiên QR. Đó là dashboard của chính chủ máy mở qua tunnel; token này vốn đã mở được cả chạy agent lẫn xóa project nên đòi thêm mã QR không thêm an toàn, chỉ chặn nhầm.
+Ngoại lệ: request mang `XTS_API_TOKEN` (header `x-xts-token`, cookie `xts_token` hoặc query `?t=`) được miễn token phiên QR. Đó là dashboard của chính chủ máy mở qua tunnel; token này vốn đã mở được cả chạy agent lẫn xóa project nên đòi thêm mã QR không thêm an toàn, chỉ chặn nhầm.
 
 **Đóng modal QR = đóng hết.** Thu hồi token, và nếu đường Internet được bật TỪ CHÍNH modal đó thì
 tắt luôn tunnel (xem [Cloudflare Tunnel](#cloudflare-tunnel-card-trên-trang-connections)). Tab bị

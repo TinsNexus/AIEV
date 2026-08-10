@@ -11,8 +11,8 @@ import { parseTranscriptJson } from "./transcript.js";
  * VÌ SAO đi vòng qua Python thay vì `npx hyperframes transcribe`: CLI đó cần
  * binary `whisper-cpp` bên ngoài + model `.en` (chỉ tiếng Anh) nên vô dụng với
  * tiếng Việt. Công thức faster-whisper large-v3 dưới đây đã chạy thật cho toàn
- * bộ video tiếng Việt của hệ thống (xem skill `noti-tiktok-vn`,
- * `noti-tiktok-full-text`) - không tự chế cách khác.
+ * bộ video tiếng Việt của hệ thống (xem skill `tisorr-tiktok-vn`,
+ * `tisorr-tiktok-full-text`) - không tự chế cách khác.
  */
 
 export interface TranscribeResult {
