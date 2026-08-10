@@ -43,7 +43,7 @@ jobs:
     name: Deploy to VPS
     needs: verify
     runs-on: ubuntu-latest
-    environment: production
+    environment: tinnt-vps-pro
     steps:
       # deploy/deploy.sh đã nằm sẵn trên VPS (tự cập nhật theo mỗi lần deploy vì
       # nó git checkout đúng tag trước khi build) - workflow chỉ cần SSH vào gọi.
