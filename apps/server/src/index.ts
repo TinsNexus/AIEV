@@ -127,7 +127,25 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
     return;
   }
-  if (isLocalRequest(req)) {
+  // Đường loopback KHÔNG cần token, nên nó là đích của CSRF: một trang web bất
+  // kỳ nạn nhân đang mở có thể bắn `fetch('http://localhost:6869/api/...',
+  // { mode: 'no-cors' })`. Trình duyệt chặn ĐỌC phản hồi, nhưng request VẪN
+  // chạy - đủ để gọi các POST không cần body (`/api/update/apply` chạy
+  // update.sh, `/api/tunnel/start` mở tunnel công khai).
+  //
+  // Trình duyệt luôn gửi `Origin` cho request khác GET/HEAD (kể cả no-cors và
+  // form submit), và JS không ghi đè được nó. Nên: có `Origin` lạ → KHÔNG được
+  // hưởng quyền loopback. Client không phải trình duyệt (curl, agent, script
+  // start) không gửi `Origin` → không ảnh hưởng.
+  //
+  // Đặt ở đây chứ không chặn cứng toàn cục: dashboard mở qua Cloudflare Tunnel
+  // có `Origin: https://<domain>` (không nằm trong allowlist) nhưng nó đi bằng
+  // token, và token thì không lấy được từ origin khác (preflight CORS chặn
+  // header, cookie SameSite=Lax chặn cross-site) - nên đường token vẫn an toàn.
+  const origin = req.headers.origin;
+  const originAllowed =
+    typeof origin !== "string" || origin === "" || isAllowedWebOrigin(origin);
+  if (originAllowed && isLocalRequest(req)) {
     next();
     return;
   }
