@@ -52,17 +52,27 @@ log "4/8 Tạo user chạy dịch vụ ($DEPLOY_USER, không có quyền login s
 if ! id "$DEPLOY_USER" >/dev/null 2>&1; then
   useradd -m -s /bin/bash "$DEPLOY_USER"
 fi
-mkdir -p "/home/$DEPLOY_USER/.ssh"
-touch "/home/$DEPLOY_USER/.ssh/authorized_keys"
-chmod 700 "/home/$DEPLOY_USER/.ssh"
-chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
-chown -R "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh"
+# Home thật lấy từ /etc/passwd, KHÔNG đoán theo mẫu /home/<user> - root có home
+# là /root chứ không phải /home/root, đoán sai là ghi nhầm chỗ, SSH vẫn 401.
+DEPLOY_HOME="$(getent passwd "$DEPLOY_USER" | cut -d: -f6)"
+mkdir -p "$DEPLOY_HOME/.ssh"
+touch "$DEPLOY_HOME/.ssh/authorized_keys"
+chmod 700 "$DEPLOY_HOME/.ssh"
+chmod 600 "$DEPLOY_HOME/.ssh/authorized_keys"
+chown -R "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_HOME/.ssh"
 echo "  -> Dán PUBLIC KEY của cặp khóa deploy (GitHub Actions dùng private key tương ứng) vào:"
-echo "     /home/$DEPLOY_USER/.ssh/authorized_keys"
+echo "     $DEPLOY_HOME/.ssh/authorized_keys"
 
 log "5/8 Clone repo vào $REPO_PATH"
 if [ ! -d "$REPO_PATH/.git" ]; then
   git clone --branch "$GIT_REF" "$REPO_URL" "$REPO_PATH"
+else
+  # Repo đã có sẵn (vd bạn tự clone tay trước khi chạy script này) - vẫn đảm
+  # bảo đang đứng đúng GIT_REF, không thì deploy/ có thể chưa tồn tại ở nhánh
+  # hiện tại (deploy/ mới chỉ có trên develop, chưa merge main).
+  git -C "$REPO_PATH" fetch origin "$GIT_REF"
+  git -C "$REPO_PATH" checkout "$GIT_REF"
+  git -C "$REPO_PATH" merge --ff-only "origin/$GIT_REF" 2>/dev/null || true
 fi
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$REPO_PATH"
 
@@ -102,7 +112,7 @@ echo " 6868/6869 thẳng ra internet. Dùng Cloudflare Tunnel + Cloudflare Acces
 echo " hoặc reverse proxy có auth, hoặc chỉ truy cập qua VPN/SSH tunnel riêng."
 echo ""
 echo " Việc còn lại để GitHub Actions deploy được:"
-echo "   1. Thêm PUBLIC key vào /home/$DEPLOY_USER/.ssh/authorized_keys (đã nhắc ở bước 4)"
+echo "   1. Thêm PUBLIC key vào $DEPLOY_HOME/.ssh/authorized_keys (đã nhắc ở bước 4)"
 echo "   2. Thêm 4 secret trong GitHub repo -> Settings -> Secrets and variables -> Actions:"
 echo "        VPS_HOST  = IP hoặc domain VPS"
 echo "        VPS_USER  = $DEPLOY_USER"
