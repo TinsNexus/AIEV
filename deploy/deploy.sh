@@ -65,9 +65,21 @@ ensure_env_file() {
 
 ensure_systemd_unit() {
   local unit="/etc/systemd/system/$SERVICE.service"
-  if ! cmp -s "$ROOT/deploy/tisorr-studio.service" "$unit" 2>/dev/null; then
-    log "cài/cập nhật systemd unit $SERVICE"
-    cp "$ROOT/deploy/tisorr-studio.service" "$unit"
+  # File mẫu trong repo hardcode /opt/tisorr-studio (WorkingDirectory +
+  # StandardOutput/Error) - thay bằng $ROOT thật (nơi deploy.sh này đang nằm)
+  # trước khi cài, không thì máy nào clone lệch khỏi /opt/tisorr-studio là
+  # service cd vào chỗ không tồn tại, chết ngay lúc start (đã dính đúng lỗi
+  # này: "Connection refused" sau restart vì cd /opt/tisorr-studio not found).
+  local rendered
+  rendered="$(sed "s#/opt/tisorr-studio#$ROOT#g" "$ROOT/deploy/tisorr-studio.service")"
+  # Chỉ User=root/Group=root khi thật sự chạy bằng root - máy dùng user riêng
+  # (deploy/vps-setup.sh) thì giữ nguyên User/Group trong file mẫu.
+  if $IS_ROOT; then
+    rendered="$(printf '%s\n' "$rendered" | sed -e 's/^User=.*/User=root/' -e 's/^Group=.*/Group=root/')"
+  fi
+  if [ "$rendered" != "$(cat "$unit" 2>/dev/null || true)" ]; then
+    log "cài/cập nhật systemd unit $SERVICE (WorkingDirectory=$ROOT)"
+    printf '%s\n' "$rendered" > "$unit"
     systemctl daemon-reload
     systemctl enable "$SERVICE" >/dev/null
   fi
@@ -128,5 +140,6 @@ if [ "$OK" = true ]; then
   exit 0
 fi
 
-log "LỖI: hệ thống không phản hồi sau khi restart - xem: journalctl -u $SERVICE -n 100 --no-pager"
+log "LỖI: hệ thống không phản hồi sau khi restart - 50 dòng log gần nhất:"
+journalctl -u "$SERVICE" -n 50 --no-pager 2>&1 || true
 exit 1
