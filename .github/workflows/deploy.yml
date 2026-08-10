@@ -1,0 +1,63 @@
+name: Deploy
+
+# Chỉ chạy khi publish một GitHub Release có tag dạng v* - đúng quy trình phát
+# hành ở CLAUDE.md mục 9 (release chỉ tạo từ commit đã qua CI xanh + build sạch).
+# Không deploy tự động theo mỗi push - tránh đẩy bản chưa duyệt lên VPS.
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Xây lại đúng commit mà tag trỏ tới TRƯỚC khi đụng vào VPS - phòng trường
+  # hợp tag bị gắn nhầm hoặc CI trên nhánh main đã đổi khác kể từ lúc release.
+  verify:
+    name: Verify tagged commit builds
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.release.tag_name, 'v')
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck (server + web + remotion)
+        run: npm run typecheck
+
+      - name: Build (server + web)
+        run: npm run build
+
+  deploy:
+    name: Deploy to VPS
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # deploy/deploy.sh đã nằm sẵn trên VPS (tự cập nhật theo mỗi lần deploy vì
+      # nó git checkout đúng tag trước khi build) - workflow chỉ cần SSH vào gọi.
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          script_stop: true
+          # VPS_PATH có default để repo mới thêm secret cũng chạy được ngay -
+          # đổi giá trị nếu bạn clone repo ở đường dẫn khác /opt/tisorr-studio.
+          script: |
+            REPO_PATH="${{ secrets.VPS_PATH }}"
+            REPO_PATH="${REPO_PATH:-/opt/tisorr-studio}"
+            bash "$REPO_PATH/deploy/deploy.sh" "${{ github.event.release.tag_name }}"
