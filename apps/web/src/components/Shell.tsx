@@ -47,10 +47,12 @@ import {
   Scissors,
   ScrollText,
   Settings2,
+  Users,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -61,7 +63,9 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { getHealth, type Health } from "@/lib/api";
+import { getHealth, type Health, type UserRole } from "@/lib/api";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/lib/useAuth";
 import { HardwareMeter } from "@/components/HardwareMeter";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -129,9 +133,18 @@ const NAV = [
   { href: "/sfx", label: "nav.sfx", icon: AudioLines },
   { href: "/prompts", label: "nav.prompts", icon: ScrollText },
   { href: "/skills", label: "nav.skills", icon: BookOpen },
-  { href: "/config", label: "nav.config", icon: Settings2 },
-  { href: "/connections", label: "nav.connections", icon: Plug },
-] as const;
+  // `role` = vai trò TỐI THIỂU để thấy mục này. Bỏ trống = ai đăng nhập cũng
+  // thấy. Đây CHỈ để giấu thứ người dùng bấm vào cũng chỉ nhận 403 - hàng rào
+  // thật nằm ở apps/server/src/policy.ts, đừng nhầm cái này là bảo mật.
+  { href: "/config", label: "nav.config", icon: Settings2, role: "admin" },
+  { href: "/connections", label: "nav.connections", icon: Plug, role: "admin" },
+  { href: "/users", label: "nav.users", icon: Users, role: "admin" },
+] as const satisfies ReadonlyArray<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  role?: UserRole;
+}>;
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -250,6 +263,24 @@ export function ShellRightPanel({
 export function Shell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated, needsSetup, loading: authLoading, can } = useAuth();
+
+  /** Trang tự lo phần khung của mình, shell không được bọc vào */
+  const bare =
+    pathname === "/m" ||
+    pathname.startsWith("/m/") ||
+    pathname === "/login" ||
+    pathname === "/setup";
+
+  // Chưa đăng nhập thì đá về /login, kèm ?next= để quay lại đúng chỗ sau khi
+  // vào được. Đây CHỈ là trải nghiệm - chặn thật nằm ở backend, nên không cần
+  // (và không nên) cố đoán quyền ở đây.
+  useEffect(() => {
+    if (bare || authLoading || authenticated) return;
+    const next = encodeURIComponent(pathname);
+    router.replace(needsSetup ? "/setup" : `/login?next=${next}`);
+  }, [bare, authLoading, authenticated, needsSetup, pathname, router]);
 
   // Trang nào đang khai báo panel phải (null = không có) - chỉ giữ tiêu đề dạng
   // chuỗi để setState không kéo theo ReactNode và gây render vòng.
@@ -314,10 +345,20 @@ export function Shell({ children }: { children: ReactNode }) {
     [slot, register]
   );
 
-  // Trang mobile /m/<id> (điện thoại quét QR upload) - layout riêng tối giản,
-  // không header/sidebar của dashboard.
-  if (pathname === "/m" || pathname.startsWith("/m/")) {
+  // Trang mobile /m/<id> (điện thoại quét QR upload) và hai trang đăng nhập -
+  // layout riêng tối giản, không header/sidebar của dashboard.
+  if (bare) {
     return <>{children}</>;
+  }
+
+  // Chưa biết có đăng nhập hay không: giữ màn hình trống thay vì chớp nguyên
+  // dashboard rồi mới đá đi - chớp như vậy còn để lộ tên project trong tiêu đề.
+  if (authLoading || !authenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)]">{t("auth.checking")}</p>
+      </div>
+    );
   }
 
   // Nhãn dài dùng cho aria-label/tooltip; nhãn ngắn là chữ hiện cạnh icon trong
@@ -372,6 +413,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <BackendStatus />
             <LanguageToggle />
             <ThemeToggle />
+            <UserMenu />
           </div>
         </header>
 
@@ -419,7 +461,7 @@ export function Shell({ children }: { children: ReactNode }) {
               className="flex flex-col gap-1"
               aria-label={t("shell.nav-aria")}
             >
-              {NAV.map(({ href, label, icon: Icon }) => {
+              {NAV.filter((n) => !("role" in n) || can(n.role)).map(({ href, label, icon: Icon }) => {
                 const text = t(label);
                 return (
                   <Link
