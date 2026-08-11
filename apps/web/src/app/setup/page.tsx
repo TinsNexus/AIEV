@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/AuthCard";
 import { Banner } from "@/components/Banner";
 import { Button } from "@/components/Button";
@@ -10,9 +10,22 @@ import { authSetup, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/useAuth";
 
+/**
+ * useSearchParams() (đọc `?code=`) buộc render phía client, mà `next build` vẫn
+ * prerender trang này - thiếu Suspense là build ĐỔ. Xem skill `auth-authz`.
+ */
 export default function SetupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetupForm />
+    </Suspense>
+  );
+}
+
+function SetupForm() {
   const { t } = useT();
   const router = useRouter();
+  const params = useSearchParams();
   const { needsSetup, loading, refresh } = useAuth();
 
   const [code, setCode] = useState("");
@@ -26,6 +39,25 @@ export default function SetupPage() {
   useEffect(() => {
     if (!loading && !needsSetup) router.replace("/login");
   }, [loading, needsSetup, router]);
+
+  /**
+   * Mã setup điền sẵn từ `?code=` - mã in trong log SSH thường không bôi chọn
+   * được, còn một cái link thì bấm là xong.
+   *
+   * Xoá mã khỏi thanh địa chỉ ngay sau khi đọc, giống hệt đường `?t=` của token
+   * (lib/api.ts): không để nó nằm lại trong lịch sử trình duyệt hay đi kèm
+   * referrer. Mã vốn dùng một lần và chết ngay khi tạo xong tài khoản, nhưng
+   * quẳng nó lên URL rồi bỏ đó thì vẫn là thói quen xấu.
+   */
+  useEffect(() => {
+    const fromUrl = params.get("code");
+    if (!fromUrl) return;
+    setCode(fromUrl);
+    const next = new URLSearchParams(params.toString());
+    next.delete("code");
+    const qs = next.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, [params]);
 
   async function onSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();

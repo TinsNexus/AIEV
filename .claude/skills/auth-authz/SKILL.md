@@ -52,6 +52,15 @@ prerenders the page. Missing a Suspense boundary is a build **failure**, not a w
 **Fix:** keep the query-reading code in a child component and wrap it: the default export is just
 `<Suspense fallback={null}><LoginForm /></Suspense>`. See `apps/web/src/app/login/page.tsx`.
 
+**Symptom:** the first admin cannot be created - repeated `auth.setup.badcode` entries in the
+audit log, user says "I can't copy it".
+**Cause:** the setup code is only printed to the server log. Read over SSH or in a terminal pane,
+a 24-character random string is genuinely hard to select without mangling it.
+**Fix:** `/setup` accepts `?code=` and prefills the field, so the operator gets a clickable link
+instead of something to transcribe. The code is stripped from the address bar right after being
+read, the same way `?t=` is handled in `apps/web/src/lib/api.ts`. When helping someone set up,
+hand them the full `https://<domain>/setup?code=<code>` URL, never the bare code.
+
 **Symptom:** nginx returns 500 on every request after enabling HTTP Basic Auth; error log says
 `open() "/www/server/pass/<domain>.pass" failed (13: Permission denied)`.
 **Cause:** the password file was written `chmod 600` root-only; nginx workers run as `www`.
