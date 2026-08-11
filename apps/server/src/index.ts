@@ -4,18 +4,11 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import {
-  SERVER_PORT,
-  apiToken,
-  ensureBaseDirs,
-  isAllowedWebOrigin,
-  repoRoot,
-} from "./config.js";
+import { SERVER_PORT, ensureBaseDirs, isAllowedWebOrigin, repoRoot } from "./config.js";
 import { autoResumeStartup } from "./agent.js";
 import { failStaleRunningJobs } from "./db.js";
 import { addSseClient } from "./events.js";
-import { HttpError, cookieValue, isLocalRequest, secretEquals } from "./util.js";
-import { isKnownUploadToken } from "./routes/uploadSession.js";
+import { HttpError } from "./util.js";
 
 import healthRouter from "./routes/health.js";
 import overviewRouter from "./routes/overview.js";
@@ -55,6 +48,10 @@ import tunnelRouter, { quickTunnelHostname } from "./routes/tunnel.js";
 import uploadSessionRouter from "./routes/uploadSession.js";
 import { GRADE_PRESETS } from "./color.js";
 import mediaRouter from "./routes/media.js";
+import authRouter from "./routes/auth.js";
+import usersRouter from "./routes/users.js";
+import { effectiveRole, identify, needsSetup, roleAtLeast, setupCode } from "./auth.js";
+import { requiredAccess } from "./policy.js";
 
 ensureBaseDirs();
 // Job còn treo "running" từ lần chạy trước (server bị tắt giữa chừng) → failed
@@ -82,10 +79,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // ============ Xác thực (đặt TRƯỚC mọi router) ============
 
-function queryString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
 /**
  * Đường được phép đi bằng TOKEN PHIÊN QR (`?k=`) - chỉ đủ cho trang /m trên
  * điện thoại: xem tên project, xem media, và upload file vào project.
@@ -104,73 +97,57 @@ function allowedForUploadToken(req: Request): boolean {
 }
 
 /**
- * Chặn mọi truy cập không xác thực. Trước đây backend 6869 mở cho cả LAN
- * (upload từ điện thoại) nên bất kỳ ai trong mạng cũng gọi được API - kể cả
- * chạy agent, đọc .env qua /media, xóa project.
- *
- * Cho qua khi:
- *  (a) preflight OPTIONS (đã trả 204 ở trên, để chắc chắn)
- *  (b) /api/health - endpoint public, trả token cho loopback
- *  (c) request TRỰC TIẾP từ máy chủ (loopback, không qua proxy) - dashboard
- *      trên máy này, agent Claude, curl, script start
- *  (d) header `x-xts-token` khớp XTS_API_TOKEN (fetch của web dashboard)
- *  (e) cookie `xts_token` khớp (img/video/EventSource - không set được header)
- *  (f) query `?t=` khớp (mở dashboard qua tunnel bằng link có token)
- *  (g) query `?k=` là token phiên upload QR còn hiệu lực (trang /m)
+ * Cửa duy nhất: xác định DANH TÍNH rồi đối chiếu với bảng chính sách
+ * (policy.ts). Không luật nào khớp đường đang gọi = từ chối, kể cả admin -
+ * route mới bắt buộc phải khai báo quyền, không được im lặng lọt qua.
  */
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === "OPTIONS") {
     next();
     return;
   }
-  if (req.path === "/api/health" || req.path.startsWith("/api/health/")) {
+
+  const access = requiredAccess(req.method, req.path);
+  if (access === "public") {
     next();
     return;
   }
-  // Đường loopback KHÔNG cần token, nên nó là đích của CSRF: một trang web bất
-  // kỳ nạn nhân đang mở có thể bắn `fetch('http://localhost:6869/api/...',
-  // { mode: 'no-cors' })`. Trình duyệt chặn ĐỌC phản hồi, nhưng request VẪN
-  // chạy - đủ để gọi các POST không cần body (`/api/update/apply` chạy
-  // update.sh, `/api/tunnel/start` mở tunnel công khai).
-  //
-  // Trình duyệt luôn gửi `Origin` cho request khác GET/HEAD (kể cả no-cors và
-  // form submit), và JS không ghi đè được nó. Nên: có `Origin` lạ → KHÔNG được
-  // hưởng quyền loopback. Client không phải trình duyệt (curl, agent, script
-  // start) không gửi `Origin` → không ảnh hưởng.
-  //
-  // Đặt ở đây chứ không chặn cứng toàn cục: dashboard mở qua Cloudflare Tunnel
-  // có `Origin: https://<domain>` (không nằm trong allowlist) nhưng nó đi bằng
-  // token, và token thì không lấy được từ origin khác (preflight CORS chặn
-  // header, cookie SameSite=Lax chặn cross-site) - nên đường token vẫn an toàn.
-  const origin = req.headers.origin;
-  const originAllowed =
-    typeof origin !== "string" || origin === "" || isAllowedWebOrigin(origin);
-  if (originAllowed && isLocalRequest(req)) {
-    next();
+  if (access === null) {
+    res.status(403).json({
+      error: { code: "FORBIDDEN", message: "Đường dẫn chưa được khai báo trong bảng phân quyền" },
+    });
     return;
   }
-  const token = apiToken();
-  const header = req.headers["x-xts-token"];
-  if (typeof header === "string" && secretEquals(header, token)) {
-    next();
+
+  const id = identify(req);
+  if (!id) {
+    res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Cần đăng nhập" } });
     return;
   }
-  if (secretEquals(cookieValue(req, "xts_token"), token)) {
-    next();
+
+  // Token QR đi đường riêng: nó không mang vai trò nào, chỉ được đúng vài
+  // đường đã liệt kê (xem allowedForUploadToken) chứ không xét theo bảng.
+  if (id.kind === "upload") {
+    if (allowedForUploadToken(req)) {
+      next();
+      return;
+    }
+    res.status(403).json({
+      error: { code: "FORBIDDEN", message: "Token phiên upload không dùng được cho thao tác này" },
+    });
     return;
   }
-  if (secretEquals(queryString(req.query.t), token)) {
-    next();
+
+  const role = effectiveRole(id);
+  if (!role || !roleAtLeast(role, access)) {
+    res.status(403).json({
+      error: { code: "FORBIDDEN", message: `Thao tác này cần quyền ${access}` },
+    });
     return;
   }
-  const k = queryString(req.query.k);
-  if (k && isKnownUploadToken(k) && allowedForUploadToken(req)) {
-    next();
-    return;
-  }
-  res.status(401).json({
-    error: { code: "UNAUTHORIZED", message: "Thiếu hoặc sai token truy cập" },
-  });
+
+  if (id.kind === "session") req.auth = id.ctx;
+  next();
 });
 
 app.use(express.json({ limit: "20mb" }));
@@ -178,6 +155,8 @@ app.use(express.json({ limit: "20mb" }));
 // SSE - một stream chung cho job/joblog/agent
 app.get("/api/events", addSseClient);
 
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
 app.use("/api/health", healthRouter);
 app.use("/api/overview", overviewRouter);
 app.use("/api/metrics", metricsRouter);
@@ -284,6 +263,18 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 const server = app.listen(SERVER_PORT, () => {
   console.log(`[server] Tisorr Studio backend chạy tại http://localhost:${SERVER_PORT}`);
   console.log(`[server] Repo root: ${repoRoot}`);
+  // Chưa có tài khoản nào → in mã dựng admin đầu tiên. Đây là chỗ DUY NHẤT mã
+  // này xuất hiện, và nó đổi sau mỗi lần khởi động: người dựng được admin đầu
+  // tiên phải là người đọc được log trên máy chủ, không phải người vào domain trước.
+  if (needsSetup()) {
+    console.log("");
+    console.log("[server] ================= CHƯA CÓ TÀI KHOẢN =================");
+    console.log(`[server]  Mã cài đặt: ${setupCode()}`);
+    console.log("[server]  Mở dashboard → màn hình tạo tài khoản admin đầu tiên,");
+    console.log("[server]  dán mã trên vào. Mã đổi mỗi lần khởi động lại server.");
+    console.log("[server] ======================================================");
+    console.log("");
+  }
   // Dò môi trường sẵn (~6s, chạy trong tiến trình con) để trang Cấu hình mở là có ngay
   warmDoctorCache();
   // Phiên bị 'interrupted' do restart (autoResume bật) → tự chạy tiếp sau khi server ổn định

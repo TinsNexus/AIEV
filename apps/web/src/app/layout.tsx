@@ -9,6 +9,7 @@ import { FAVICON } from "@/lib/brand";
 import { Shell } from "@/components/Shell";
 import { StaleChunkGuard } from "@/components/StaleChunkGuard";
 import { LanguageProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/useAuth";
 import { EventsProvider } from "@/lib/useEvents";
 
 export const metadata: Metadata = {
@@ -30,9 +31,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <StaleChunkGuard />
         <LanguageProvider>
-          <EventsProvider>
-            <Shell>{children}</Shell>
-          </EventsProvider>
+          <AuthProvider>
+            <EventsProvider>
+              <Shell>{children}</Shell>
+            </EventsProvider>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>
