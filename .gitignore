@@ -91,3 +91,7 @@ start/update-target.txt
 # Trạng thái cục bộ của script khởi động: dấu vân tay mã nguồn của bản build
 # gần nhất (build.json) và của lần chạy hiện tại (run.json). Riêng từng máy.
 /.aiev/
+
+# aaPanel tự sinh file này trong thư mục web root (open_basedir cho PHP), kèm
+# đường dẫn tuyệt đối của máy chủ. Của riêng máy đang host, không phải của repo.
+/.user.ini
