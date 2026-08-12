@@ -7,8 +7,9 @@
  * - rail trái (220px ↔ 56px icon), key localStorage `aiev-nav`;
  * - panel AI phải (440px ↔ dải mỏng 40px), key `aiev-panel`.
  *
- * BỀ RỘNG DO CSS QUYẾT ĐỊNH, KHÔNG DO STATE REACT. SHELL_SCRIPT chạy trước paint
- * ghi `data-nav`/`data-panel` lên <html>, globals.css đọc thẳng hai thuộc tính đó
+ * BỀ RỘNG DO CSS QUYẾT ĐỊNH, KHÔNG DO STATE REACT. SHELL_SCRIPT (trong
+ * layout.tsx) chạy trước paint ghi `data-nav`/`data-panel` lên <html>,
+ * globals.css đọc thẳng hai thuộc tính đó
  * (xem khối "App shell" ở đầu globals.css). State React ở đây chỉ để nhãn aria và
  * tooltip nói đúng trạng thái - không được dùng nó để chọn class bề rộng, làm thế
  * là mỗi lần tải trang lại nháy một khung hình đúng bằng lúc rail bung ra rồi co
@@ -76,15 +77,15 @@ import { useT } from "@/lib/i18n";
 /** Mã nguồn dự án - hiện ở cuối sidebar, ngay trên badge phiên bản */
 const REPO_URL = "https://github.com/tinnt-truman/AIEV";
 
-const NAV_STORAGE_KEY = "aiev-nav";
-const PANEL_STORAGE_KEY = "aiev-panel";
-
-/**
- * Chống nháy layout: đọc lựa chọn gấp/mở TRƯỚC khung hình đầu tiên, đúng cách
- * THEME_SCRIPT trong layout.tsx làm với theme. Đặt làm phần tử đầu của shell nên
- * nó chạy lúc trình duyệt còn đang phân tích markup, xong trước khi có gì được vẽ.
- */
-const SHELL_SCRIPT = `try{var d=document.documentElement,n=localStorage.getItem("${NAV_STORAGE_KEY}");if(n==="collapsed"||n==="expanded")d.setAttribute("data-nav",n);if(localStorage.getItem("${PANEL_STORAGE_KEY}")==="collapsed")d.setAttribute("data-panel","collapsed")}catch(e){}`;
+// Chống nháy layout: đọc lựa chọn gấp/mở TRƯỚC khung hình đầu tiên, đúng cách
+// THEME_SCRIPT trong layout.tsx làm với theme. Script này giờ sống trong
+// layout.tsx (Server Component) chứ không phải ở đây - Shell là "use client",
+// và React coi <script> render trong cây client component như một node bị bỏ
+// qua khi client-render/hydrate (không FOUC-safe, còn báo lỗi console). Script
+// trong layout.tsx là markup HTML tĩnh nên trình duyệt chạy nó lúc phân tích
+// trang, trước khi Shell kịp vẽ khung đầu tiên - đúng ý đồ ban đầu.
+export const NAV_STORAGE_KEY = "aiev-nav";
+export const PANEL_STORAGE_KEY = "aiev-panel";
 
 /**
  * Dưới ngưỡng này rail MẶC ĐỊNH gấp lại (xem lý do con số trong globals.css).
@@ -373,8 +374,6 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <ShellPanelContext.Provider value={panelApi}>
       <div className="flex h-screen flex-col">
-        <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
-
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4">
           <Link href="/" className="flex shrink-0 items-center">
             {/* Logo đổi theo theme qua CSS trong globals.css.

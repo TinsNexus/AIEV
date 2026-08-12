@@ -3,8 +3,8 @@
 # phải một phần của workflow deploy tự động (đó là deploy/deploy.sh).
 #
 # Sau khi script này chạy xong, .github/workflows/deploy.yml chỉ còn việc SSH
-# vào gọi deploy/deploy.sh mỗi khi bạn publish Release - không cần làm lại các
-# bước ở đây nữa.
+# vào gọi deploy/deploy.sh mỗi khi bạn chạy tay workflow "Deploy" (trỏ tới một
+# branch/tag/commit) - không cần làm lại các bước ở đây nữa.
 #
 #   sudo bash deploy/vps-setup.sh
 #
@@ -15,7 +15,7 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/tinnt-truman/AIEV.git}"
 REPO_PATH="${REPO_PATH:-/opt/tisorr-studio}"
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
-GIT_REF="${GIT_REF:-main}"   # nhánh/tag để checkout lần đầu - deploy.sh sẽ tự đổi theo tag release sau này
+GIT_REF="${GIT_REF:-main}"   # nhánh/tag để checkout lần đầu - deploy.sh sẽ tự checkout đúng ref được truyền vào ở các lần deploy sau
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Chạy script này bằng sudo/root: sudo bash deploy/vps-setup.sh" >&2

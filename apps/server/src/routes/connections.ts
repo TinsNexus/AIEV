@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Router } from "express";
-import { hasClaudeAuth, upsertEnvVar } from "../config.js";
+import { claudeSubscriptionOAuthPresent, hasClaudeAuth, upsertEnvVar } from "../config.js";
 import { HttpError } from "../util.js";
 
 /**
@@ -28,13 +28,6 @@ function maskKey(key: string): string {
   return `${key.slice(0, 6)}…${key.slice(-4)}`;
 }
 
-function claudeOauthPresent(): boolean {
-  const configDir =
-    process.env.CLAUDE_CONFIG_DIR ||
-    path.join(process.env.USERPROFILE || process.env.HOME || "", ".claude");
-  return fs.existsSync(path.join(configDir, ".credentials.json"));
-}
-
 function codexDetected(): boolean {
   const home = process.env.USERPROFILE || process.env.HOME || "";
   return fs.existsSync(path.join(home, ".codex", "auth.json"));
@@ -54,7 +47,7 @@ function listConnections(): ConnectionInfo[] {
   const geminiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "";
   const openaiKey = process.env.OPENAI_API_KEY || "";
   const sonioxKey = process.env.SONIOX_API_KEY || "";
-  const oauth = claudeOauthPresent();
+  const oauth = claudeSubscriptionOAuthPresent();
 
   return [
     {
@@ -238,7 +231,7 @@ router.post("/:provider/test", async (req, res) => {
       }
       return;
     }
-    if (claudeOauthPresent()) {
+    if (claudeSubscriptionOAuthPresent()) {
       res.json({
         ok: true,
         message: "Đang dùng subscription OAuth của Claude Code (đã đăng nhập trên máy).",

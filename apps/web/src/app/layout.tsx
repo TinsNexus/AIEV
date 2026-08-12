@@ -6,7 +6,7 @@ import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import "./globals.css";
 import { FAVICON } from "@/lib/brand";
-import { Shell } from "@/components/Shell";
+import { NAV_STORAGE_KEY, PANEL_STORAGE_KEY, Shell } from "@/components/Shell";
 import { StaleChunkGuard } from "@/components/StaleChunkGuard";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/useAuth";
@@ -24,11 +24,21 @@ export const metadata: Metadata = {
 /** Chống FOUC: áp data-theme trước khi paint. Mặc định light. */
 const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}`;
 
+/**
+ * Chống nháy layout: áp data-nav/data-panel (rail gấp/mở, panel AI gấp/mở)
+ * trước khi paint, cùng cơ chế với THEME_SCRIPT ở trên. Phải nằm ở đây (Server
+ * Component) chứ không phải trong Shell.tsx ("use client") - script render từ
+ * một client component không chạy khi client re-render/hydrate, chỉ ở đây nó
+ * mới là markup HTML tĩnh mà trình duyệt chạy lúc phân tích trang.
+ */
+const SHELL_SCRIPT = `try{var d=document.documentElement,n=localStorage.getItem("${NAV_STORAGE_KEY}");if(n==="collapsed"||n==="expanded")d.setAttribute("data-nav",n);if(localStorage.getItem("${PANEL_STORAGE_KEY}")==="collapsed")d.setAttribute("data-panel","collapsed")}catch(e){}`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
         <StaleChunkGuard />
         <LanguageProvider>
           <AuthProvider>

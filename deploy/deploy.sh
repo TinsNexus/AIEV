@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
 # Deploy Tisorr Studio lên VPS - tự kiểm tra môi trường đã setup chưa (Node,
 # ffmpeg, dep Chrome headless, systemd unit, .env), làm nốt phần còn thiếu,
-# rồi checkout đúng tag release, rebuild, restart. Gọi lại bao nhiêu lần cũng
-# được - mỗi bước tự kiểm tra trước khi làm, lần đầu setup hết, lần sau chỉ
-# còn checkout + build + restart (vài giây).
+# rồi checkout đúng ref (branch/tag/commit SHA), rebuild, restart. Gọi lại bao
+# nhiêu lần cũng được - mỗi bước tự kiểm tra trước khi làm, lần đầu setup hết,
+# lần sau chỉ còn checkout + build + restart (vài giây).
 #
-# Gọi bởi .github/workflows/deploy.yml qua SSH, hoặc chạy tay trên VPS:
+# Gọi bởi .github/workflows/deploy.yml qua SSH (truyền commit SHA đã verify),
+# hoặc chạy tay trên VPS với branch/tag/SHA bất kỳ:
+#   sudo bash deploy/deploy.sh develop
 #   sudo bash deploy/deploy.sh v1.2.0
+#   sudo bash deploy/deploy.sh a1b2c3d
 #
 # Yêu cầu DUY NHẤT không tự lo được: repo phải đã tồn tại ở đường dẫn này
 # (deploy.yml tự git clone nếu thiếu, xem "SSH deploy" step) - còn lại (gói hệ
 # thống, systemd, .env, build, restart) script này tự làm hết.
 #
-# VÌ SAO checkout tag chứ không git pull như update/update.sh: update.sh phục vụ
-# máy cá nhân bám nhánh main (hoặc kênh do người dùng chọn) và phải backup dữ
-# liệu người dùng vì đó là nơi Style Design/sound-effects/skills của họ sống.
-# VPS thì khác - deploy đúng một tag cố định, dữ liệu runtime (assets/styles,
-# assets/sound-effects, .env...) đều nằm trong .gitignore nên `git checkout`
-# không đụng tới, không cần vòng backup/restore phức tạp đó.
+# VÌ SAO checkout --force chứ không git pull như update/update.sh: update.sh
+# phục vụ máy cá nhân bám nhánh main (hoặc kênh do người dùng chọn) và phải
+# backup dữ liệu người dùng vì đó là nơi Style Design/sound-effects/skills của
+# họ sống. VPS thì khác - deploy đúng một ref cố định tại thời điểm chạy, dữ
+# liệu runtime (assets/styles, assets/sound-effects, .env...) đều nằm trong
+# .gitignore nên `git checkout` không đụng tới, không cần vòng backup/restore
+# phức tạp đó. Deploy lại branch đang di chuyển (vd "develop") thì mỗi lần
+# workflow chạy sẽ tự lấy đúng commit mới nhất tại thời điểm đó, không bám giữ
+# state cũ như một working copy thường làm.
 set -euo pipefail
 
 SERVICE="${DEPLOY_SERVICE:-tisorr-studio}"
-TAG="${1:?Thiếu tag - dùng: deploy.sh v1.2.0}"
+REF="${1:?Thiếu ref - dùng: deploy.sh <branch|tag|commit-sha>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
@@ -95,16 +101,19 @@ else
 fi
 ensure_env_file
 
-# ---------- 1. Checkout đúng tag ----------
+# ---------- 1. Checkout đúng ref ----------
 log "repo: $ROOT"
-log "fetch tags"
-git fetch origin --tags --force --prune
+log "fetch"
+# Không chỉ --tags: REF giờ thường là tên branch hoặc commit SHA, cần fetch
+# hết heads (refspec mặc định lúc clone) lẫn tags mới chắc chắn thấy được.
+git fetch origin --force --prune --tags
 
-log "checkout $TAG"
+log "checkout $REF"
 # --force: bỏ mọi thay đổi cục bộ trong file TRACKED (không đụng file gitignore
 # như .env, assets/styles - xem ghi chú đầu file). Detached HEAD là đúng ý ở
-# đây: VPS phải chạy đúng snapshot của bản release, không bám nhánh nào cả.
-git checkout --force "$TAG"
+# đây: VPS phải chạy đúng snapshot tại thời điểm deploy, không tự pull thêm gì
+# sau đó dù REF là tên branch.
+git checkout --force "$REF"
 
 # ---------- 2. Build ----------
 log "npm ci"
@@ -136,7 +145,7 @@ for _ in $(seq 1 30); do
 done
 
 if [ "$OK" = true ]; then
-  log "OK - dashboard + backend đang chạy bản $TAG"
+  log "OK - dashboard + backend đang chạy bản $REF"
   exit 0
 fi
 

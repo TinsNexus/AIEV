@@ -93,9 +93,27 @@ export function apiToken(): string {
 }
 
 /**
+ * Đăng nhập subscription Claude Code trên máy có hay không - đúng HAI nơi có
+ * thể chứa nó: file ~/.claude/.credentials.json (Windows/Linux, hoặc
+ * CLAUDE_CONFIG_DIR nếu đặt khác) HOẶC macOS Keychain (Claude Code trên macOS
+ * không ghi ra file, ghi thẳng vào Keychain). Đây là NGUỒN SỰ THẬT DUY NHẤT -
+ * đừng tự viết lại phần này ở chỗ khác (routes/connections.ts từng có bản
+ * chỉ-check-file riêng, quên phần Keychain, khiến trang Kết nối báo "chưa kết
+ * nối" trên macOS dù hasClaudeAuth() ở đây vẫn trả true và chat vẫn chạy được).
+ */
+export function claudeSubscriptionOAuthPresent(): boolean {
+  const configDir =
+    process.env.CLAUDE_CONFIG_DIR ||
+    path.join(process.env.USERPROFILE || process.env.HOME || "", ".claude");
+  if (fs.existsSync(path.join(configDir, ".credentials.json"))) return true;
+  // macOS: Claude Code lưu OAuth trong Keychain, KHÔNG có .credentials.json
+  return darwinKeychainHasClaudeCreds();
+}
+
+/**
  * Có xác thực Claude cho Agent SDK không - theo thứ tự SDK tự nhận:
  * env key (API key / OAuth token / gateway token) hoặc đăng nhập subscription
- * của Claude Code trên máy (~/.claude/.credentials.json, hoặc CLAUDE_CONFIG_DIR).
+ * của Claude Code trên máy (xem claudeSubscriptionOAuthPresent).
  */
 export function hasClaudeAuth(): boolean {
   if (
@@ -105,12 +123,7 @@ export function hasClaudeAuth(): boolean {
   ) {
     return true;
   }
-  const configDir =
-    process.env.CLAUDE_CONFIG_DIR ||
-    path.join(process.env.USERPROFILE || process.env.HOME || "", ".claude");
-  if (fs.existsSync(path.join(configDir, ".credentials.json"))) return true;
-  // macOS: Claude Code lưu OAuth trong Keychain, KHÔNG có .credentials.json
-  return darwinKeychainHasClaudeCreds();
+  return claudeSubscriptionOAuthPresent();
 }
 
 // Cache kết quả tra Keychain 60s - health poll mỗi 30s, không spawn security liên tục

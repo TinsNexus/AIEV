@@ -1,20 +1,15 @@
 name: Deploy
 
-# Hai cách kích hoạt:
-#   1. Publish một GitHub Release có tag dạng v* - đúng quy trình phát hành ở
-#      CLAUDE.md mục 9 (release chỉ tạo từ commit đã qua CI xanh + build sạch).
-#   2. Chạy tay (workflow_dispatch, tab Actions -> Deploy -> Run workflow) -
-#      deploy lại một tag ĐÃ TỒN TẠI, tiện khi cần thử lại sau khi sửa secret/
-#      VPS mà không muốn tạo release mới.
-# Không deploy tự động theo mỗi push - tránh đẩy bản chưa duyệt lên VPS.
+# Kích hoạt: chạy tay (workflow_dispatch), trỏ tới một branch (hoặc tag/commit
+# SHA) rồi deploy đúng HEAD của ref đó. Không cần tạo GitHub Release trước.
+# Không tự deploy theo mỗi push - luôn phải bấm Run workflow.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag cần deploy (vd v1.2.0) - phải đã tồn tại trên origin"
+      ref:
+        description: "Branch (hoặc tag/commit) cần deploy"
         required: true
+        default: "develop"
         type: string
 
 concurrency:
@@ -25,34 +20,21 @@ permissions:
   contents: read
 
 jobs:
-  # Gom logic "tag nào đang deploy" về một chỗ - release lấy từ
-  # github.event.release.tag_name, chạy tay lấy từ input - verify/deploy phía
-  # sau chỉ cần đọc needs.resolve.outputs.tag, không phải tự phân biệt trigger.
-  resolve:
-    name: Resolve deploy tag
+  # Build lại đúng commit ở đầu ref trước khi đụng vào VPS, phòng branch đang
+  # đỏ CI mà vẫn lỡ tay deploy.
+  verify:
+    name: Verify branch builds
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.pick.outputs.tag }}
-    steps:
-      - id: pick
-        run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          fi
-
-  # Xây lại đúng commit mà tag trỏ tới TRƯỚC khi đụng vào VPS - phòng trường
-  # hợp tag bị gắn nhầm hoặc CI trên nhánh main đã đổi khác kể từ lúc release.
-  verify:
-    name: Verify tagged commit builds
-    needs: resolve
-    runs-on: ubuntu-latest
-    if: startsWith(needs.resolve.outputs.tag, 'v')
+      ref: ${{ inputs.ref }}
+      sha: ${{ steps.sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.resolve.outputs.tag }}
+          ref: ${{ inputs.ref }}
+
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v5
         with:
@@ -60,24 +42,28 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
 
-      - name: Typecheck (server + web + remotion)
-        run: npm run typecheck
-
-      - name: Build (server + web)
-        run: npm run build
-
+  # SSH vào VPS rồi gọi deploy/deploy.sh - script lo hết phần còn lại
+  # (checkout ref, build, restart systemd, health-check). Cần SSH key đã có
+  # sẵn trong authorized_keys và firewall VPS cho phép IP của GitHub Actions
+  # runner (dải IP động - xem https://api.github.com/meta, khoá "actions").
   deploy:
     name: Deploy to VPS
-    needs: [resolve, verify]
+    needs: verify
     runs-on: ubuntu-latest
     environment: tinnt-vps-pro
     steps:
-      # Tự clone nếu VPS còn trống (lần deploy đầu tiên trên một máy mới), rồi
-      # gọi deploy/deploy.sh - script đó tự lo phần còn lại (gói hệ thống,
-      # systemd, .env, checkout/build/restart). Không cần chạy tay bước nào
-      # trên VPS trước, ngoại trừ việc SSH key phải đã nằm sẵn trong
-      # authorized_keys - cái đó không có cách nào tự động hoá được từ xa.
+      # Debug: in IP thật của runner ra log. Runner GitHub-hosted đổi IP mỗi
+      # lần chạy (dải động, xem api.github.com/meta khoá "actions") - nếu SSH
+      # deploy lỗi "connection reset by peer" khi handshake, IP in ra đây
+      # chính là IP bị firewall/fail2ban trên VPS chặn. Không phải bí mật,
+      # in thẳng ra log public cũng không sao.
+      - name: Print runner IP (debug firewall)
+        run: |
+          echo "Runner IP: $(curl -s https://api.ipify.org || curl -s https://ifconfig.me)"
+
       - name: SSH deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -86,14 +72,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || '22' }}
           script_stop: true
-          # VPS_PATH có default để repo mới thêm secret cũng chạy được ngay -
-          # đổi giá trị nếu bạn clone repo ở đường dẫn khác /opt/tisorr-studio.
+          command_timeout: 15m
           script: |
             REPO_PATH="${{ secrets.VPS_PATH }}"
             REPO_PATH="${REPO_PATH:-/opt/tisorr-studio}"
             if [ ! -d "$REPO_PATH/.git" ]; then
-              echo "[bootstrap] repo chưa có ở $REPO_PATH - clone lần đầu"
               mkdir -p "$(dirname "$REPO_PATH")"
               git clone https://github.com/tinnt-truman/AIEV.git "$REPO_PATH"
             fi
-            bash "$REPO_PATH/deploy/deploy.sh" "${{ needs.resolve.outputs.tag }}"
+            bash "$REPO_PATH/deploy/deploy.sh" "${{ needs.verify.outputs.sha }}"
