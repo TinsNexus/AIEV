@@ -1763,6 +1763,96 @@ export const generateImage = (id: string, step?: ImageGenStep) =>
     step ? { step } : {}
   );
 
+// ============ Workspaces (nhóm project video/ảnh) ============
+
+export type ProjectKind = "video" | "image";
+
+/** Bảng màu chip workspace - PHẢI khớp WORKSPACE_COLORS trong apps/server/src/workspaces.ts */
+export const WORKSPACE_COLORS = [
+  "#ed3c47",
+  "#ff7849",
+  "#f59e0b",
+  "#16a34a",
+  "#37bdf8",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#64748b",
+] as const;
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  color: string;
+  description: string;
+  memberCount: { video: number; image: number; total: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceMemberView {
+  kind: ProjectKind;
+  id: string;
+  addedAt: string;
+  /** true = project đã bị xóa khỏi video-projects/image-projects nhưng chưa gỡ khỏi workspace */
+  missing: boolean;
+  name: string;
+  status: string | null;
+  tags: string[];
+  updatedAt: string | null;
+}
+
+export interface WorkspaceDetail extends WorkspaceSummary {
+  members: WorkspaceMemberView[];
+}
+
+export const getWorkspaces = () =>
+  request<WorkspaceSummary[]>("/api/workspaces");
+
+export const createWorkspace = (input: {
+  name: string;
+  color?: string;
+  description?: string;
+}) => post<WorkspaceSummary>("/api/workspaces", input);
+
+export const getWorkspace = (id: string) =>
+  request<WorkspaceDetail>(`/api/workspaces/${encodeURIComponent(id)}`);
+
+export const updateWorkspace = (
+  id: string,
+  patch: Partial<{ name: string; color: string; description: string }>
+) =>
+  jsonBody<WorkspaceSummary>(
+    `/api/workspaces/${encodeURIComponent(id)}`,
+    "PUT",
+    patch
+  );
+
+export const deleteWorkspace = (id: string) =>
+  request<void>(`/api/workspaces/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
+export const addWorkspaceMember = (
+  workspaceId: string,
+  kind: ProjectKind,
+  id: string
+) =>
+  post<WorkspaceSummary>(
+    `/api/workspaces/${encodeURIComponent(workspaceId)}/members`,
+    { kind, id }
+  );
+
+export const removeWorkspaceMember = (
+  workspaceId: string,
+  kind: ProjectKind,
+  id: string
+) =>
+  request<void>(
+    `/api/workspaces/${encodeURIComponent(workspaceId)}/members/${kind}/${encodeURIComponent(id)}`,
+    { method: "DELETE" }
+  );
+
 // ============ Kết nối điện thoại (LAN) ============
 
 /** GET /api/lan-info - IP LAN của máy chạy server + port web, cho QR "Kết nối điện thoại". */

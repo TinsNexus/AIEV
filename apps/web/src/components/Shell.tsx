@@ -31,6 +31,7 @@ import {
   Clapperboard,
   ExternalLink,
   FileText,
+  FolderKanban,
   FolderOpen,
   Images,
   Languages,
@@ -116,6 +117,9 @@ const NAV = [
   { href: "/", label: "nav.dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "nav.projects", icon: Clapperboard },
   { href: "/images", label: "nav.images", icon: Images },
+  // Ngay dưới Videos/Images Project: workspace chỉ nhóm hai loại project đó lại,
+  // đặt xa chúng thì tính năng gộp nhóm không còn liên hệ trực quan với thứ nó gộp.
+  { href: "/workspaces", label: "nav.workspaces", icon: FolderKanban },
   { href: "/auto-cut", label: "nav.auto-cut", icon: Scissors },
   { href: "/text-to-video", label: "nav.text-to-video", icon: FileText },
   // Ngay dưới Text to video theo đúng yêu cầu: hai tính năng đều "đưa nội dung

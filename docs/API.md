@@ -1031,6 +1031,40 @@ Chọn vị trí khác thì Poster tự dời theo, không chỉ mỗi khối ch
 - 16:9 căn giữa được nới khối chữ từ 47% lên 72% khung — 47% tồn tại để chừa nửa khung cho chủ thể
   ảnh, căn giữa thì không còn nửa nào để chừa, giữ hẹp chỉ làm chữ xuống dòng vụn.
 
+## Workspaces (nhóm project video/ảnh, tab riêng) — assets/workspaces/workspaces.json
+
+Nhãn nhóm gom nhiều project video (`video-projects/<id>`) và project ảnh (`image-projects/<id>`)
+lại với nhau — KHÔNG di chuyển hay đụng file của project, chỉ lưu một danh sách tham chiếu `(kind, id)`.
+Xóa workspace không xóa project thành viên.
+
+```
+Workspace = { id, name, color: string (hex),
+              description: string,
+              members: [{ kind: "video"|"image", id: string, addedAt }],
+              createdAt, updatedAt }
+
+GET    /api/workspaces                          → WorkspaceSummary[] (không kèm members đã enrich)
+POST   /api/workspaces                          { name, color?, description? } → 201 WorkspaceSummary
+                                                  (id sinh từ name; color bỏ trống → xoay vòng bảng màu)
+GET    /api/workspaces/:id                       → WorkspaceSummary & { members: WorkspaceMemberView[] }
+                                                  (members đã enrich tên/status/tags từ project thật;
+                                                  project bị xóa nhưng chưa gỡ khỏi workspace → missing: true)
+PUT    /api/workspaces/:id                       partial (name/color/description) → WorkspaceSummary
+DELETE /api/workspaces/:id                       → 204 (CHỈ xóa nhãn nhóm, project thành viên giữ nguyên)
+POST   /api/workspaces/:id/members               { kind: "video"|"image", id } → 201 WorkspaceSummary
+                                                  404 PROJECT_NOT_FOUND nếu project không tồn tại,
+                                                  409 ALREADY_MEMBER nếu đã có trong workspace
+DELETE /api/workspaces/:id/members/:kind/:projectId → 204
+```
+
+- **Vì sao member cần cả `kind` lẫn `id`**: `video-projects/<id>` và `image-projects/<id>` là hai
+  không gian tên id RIÊNG (xem `uniqueProjectId` vs `newImageProjectId` — không bên nào kiểm tra bên
+  kia), nên một project video và một project ảnh có thể trùng id.
+- **WorkspaceSummary** (danh sách) chỉ có `memberCount: { video, image, total }`, không kèm members đã
+  enrich — nặng, chỉ tính khi mở chi tiết một workspace (`GET /:id`).
+- Lưu JSON một file (như Style Design), không phải SQLite: workspace chỉ là nhãn nhóm gắn vào id có
+  sẵn, không cần join phức tạp.
+
 ## Prompt mẫu (quản lý prompt tái sử dụng — lưu tại assets/prompts/prompts.json)
 
 ```

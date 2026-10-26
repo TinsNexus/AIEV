@@ -66,6 +66,7 @@ Edit-Video-AI/
 │   ├── sound-effects/         ← thư viện sound effect dùng chung (library.json)
 │   ├── music/                 ← thư viện nhạc nền dùng chung (library.json, tag theo mood)
 │   ├── brand-logos/           ← 116+ logo brand (Simple Icons, CC0) + library.json — tự lớn dần
+│   ├── workspaces/            ← nhóm project video/ảnh (workspaces.json) — tab Workspace
 │   └── voices/                ← giọng đã nhân bản (gitignore - là giọng thật của người dùng)
 ├── docs/                      ← tài liệu (API.md — contract backend)
 ├── start/                     ← script khởi động (start.ps1)

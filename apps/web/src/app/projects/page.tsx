@@ -5,6 +5,7 @@ import {
   Copy,
   FileText,
   Filter,
+  FolderKanban,
   Pencil,
   Play,
   Plus,
@@ -20,15 +21,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  addWorkspaceMember,
+  ApiError,
   cleanProjectJunk,
   createJob,
   createProject,
+  createWorkspace,
   deleteProject,
   getProjectJunk,
   getProjects,
+  getWorkspaces,
   renameProject,
   startProjectEdit,
   type ProjectSummary,
+  type WorkspaceSummary,
 } from "@/lib/api";
 import { Card } from "@/components/Card";
 import { ProjectBadge } from "@/components/Badge";
@@ -117,6 +123,17 @@ export default function ProjectsPage() {
   const [renderBusy, setRenderBusy] = useState(false);
   const [bulkActionNotice, setBulkActionNotice] = useState<string | null>(null);
   const [bulkActionErrors, setBulkActionErrors] = useState<string[]>([]);
+
+  // Bulk "Thêm vào workspace" - danh sách workspace nạp lười (chỉ lúc mở modal)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[] | null>(null);
+  const [workspacesLoadError, setWorkspacesLoadError] = useState<string | null>(null);
+  const NEW_WORKSPACE = "__new__";
+  const [workspaceChoice, setWorkspaceChoice] = useState<string>("");
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [workspaceErrors, setWorkspaceErrors] = useState<string[]>([]);
+  const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
 
   // Nhân bản project - project gốc đang chọn + notice sau khi clone xong
   const [cloneSource, setCloneSource] = useState<{
@@ -423,6 +440,67 @@ export default function ProjectsPage() {
     await load();
   }
 
+  // ---- Thêm vào workspace hàng loạt ----
+
+  async function openWorkspacePicker() {
+    setWorkspaceChoice("");
+    setNewWorkspaceName("");
+    setWorkspaceErrors([]);
+    setWorkspaceNotice(null);
+    setWorkspaceOpen(true);
+    try {
+      const list = await getWorkspaces();
+      setWorkspaces(list);
+      setWorkspacesLoadError(null);
+      // Chưa có workspace nào → mở thẳng chế độ tạo mới, đỡ một cú bấm
+      if (list.length === 0) setWorkspaceChoice(NEW_WORKSPACE);
+    } catch (e) {
+      setWorkspacesLoadError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function onAddToWorkspace() {
+    if (workspaceBusy || selectedProjects.length === 0) return;
+    const creatingNew = workspaceChoice === NEW_WORKSPACE;
+    if (!workspaceChoice || (creatingNew && !newWorkspaceName.trim())) return;
+    setWorkspaceBusy(true);
+    setWorkspaceErrors([]);
+    try {
+      const workspaceId = creatingNew
+        ? (await createWorkspace({ name: newWorkspaceName.trim() })).id
+        : workspaceChoice;
+      const targets = selectedProjects;
+      const errors: string[] = [];
+      let added = 0;
+      for (const p of targets) {
+        try {
+          await addWorkspaceMember(workspaceId, "video", p.id);
+          added++;
+        } catch (e) {
+          // Đã có sẵn trong workspace → coi như thành công, không phải lỗi
+          if (e instanceof ApiError && e.code === "ALREADY_MEMBER") {
+            added++;
+            continue;
+          }
+          errors.push(`${p.name} (${p.id}): ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      if (added > 0) {
+        setWorkspaceNotice(tf("projects.add-to-workspace-started", { n: added }));
+        setSelected(new Set());
+      }
+      if (errors.length > 0) {
+        setWorkspaceErrors(errors);
+      } else {
+        setWorkspaceOpen(false);
+      }
+    } catch (e) {
+      setWorkspaceErrors([e instanceof Error ? e.message : String(e)]);
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  }
+
   // ---- Tạo project ----
 
   function openCreate() {
@@ -499,6 +577,8 @@ export default function ProjectsPage() {
           detail={bulkActionErrors.join("\n")}
         />
       )}
+
+      {workspaceNotice && <Banner tone="success" message={workspaceNotice} />}
 
       {cloneNotice && (
         <Banner
@@ -582,6 +662,21 @@ export default function ProjectsPage() {
                 <InfoHint
                   titleKey="help.projects-bulk-edit.title"
                   bodyKey="help.projects-bulk-edit.body"
+                />
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Button
+                  variant="secondary"
+                  small
+                  disabled={junkBusy || renderBusy}
+                  onClick={openWorkspacePicker}
+                >
+                  <FolderKanban size={14} strokeWidth={2} />
+                  {tf("projects.add-to-workspace-n", { n: selected.size })}
+                </Button>
+                <InfoHint
+                  titleKey="help.projects-workspace.title"
+                  bodyKey="help.projects-workspace.body"
                 />
               </span>
             </>
@@ -893,6 +988,91 @@ export default function ProjectsPage() {
           <p className="text-sm text-[var(--text-muted)]">
             {t("projects.none-selected")}
           </p>
+        )}
+      </Modal>
+
+      {/* Modal thêm vào workspace hàng loạt */}
+      <Modal
+        title={t("projects.add-to-workspace-title")}
+        open={workspaceOpen}
+        onClose={() => {
+          if (!workspaceBusy) setWorkspaceOpen(false);
+        }}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              disabled={workspaceBusy}
+              onClick={() => setWorkspaceOpen(false)}
+            >
+              {workspaceErrors.length > 0 ? t("common.close") : t("common.cancel")}
+            </Button>
+            <Button
+              disabled={
+                workspaceBusy ||
+                selectedProjects.length === 0 ||
+                !workspaceChoice ||
+                (workspaceChoice === NEW_WORKSPACE && !newWorkspaceName.trim())
+              }
+              onClick={onAddToWorkspace}
+            >
+              <FolderKanban size={15} strokeWidth={2} />
+              {workspaceBusy
+                ? t("common.saving")
+                : tf("projects.add-to-workspace-n", { n: selectedProjects.length })}
+            </Button>
+          </>
+        }
+      >
+        {workspacesLoadError && (
+          <ErrorBanner message={t("workspaces.load-error")} detail={workspacesLoadError} />
+        )}
+        {workspaceErrors.length > 0 && (
+          <ErrorBanner
+            message={tf("projects.add-to-workspace-errors", { n: workspaceErrors.length })}
+            detail={workspaceErrors.join("\n")}
+          />
+        )}
+        {selectedProjects.length > 0 ? (
+          <>
+            <p className="text-sm">
+              {tf("projects.add-to-workspace-desc", { n: selectedProjects.length })}
+            </p>
+            <Field label={t("projects.add-to-workspace-pick")} htmlFor="workspace-pick">
+              <select
+                id="workspace-pick"
+                className="input"
+                value={workspaceChoice}
+                disabled={workspaceBusy || workspaces === null}
+                onChange={(e) => setWorkspaceChoice(e.target.value)}
+              >
+                <option value="" disabled>
+                  {workspaces === null ? t("common.loading") : t("projects.add-to-workspace-pick")}
+                </option>
+                {(workspaces ?? []).map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+                <option value={NEW_WORKSPACE}>{t("projects.add-to-workspace-new")}</option>
+              </select>
+            </Field>
+            {workspaceChoice === NEW_WORKSPACE && (
+              <Field label={t("common.name")} htmlFor="workspace-new-name-inline">
+                <input
+                  id="workspace-new-name-inline"
+                  className="input"
+                  autoFocus
+                  value={newWorkspaceName}
+                  disabled={workspaceBusy}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                  placeholder={t("workspaces.name-placeholder")}
+                />
+              </Field>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-[var(--text-muted)]">{t("projects.none-selected")}</p>
         )}
       </Modal>
 
