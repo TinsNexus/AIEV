@@ -3,7 +3,7 @@
   "license": "MIT",
   "version": "0.1.0",
   "private": true,
-  "description": "Tisorr Studio by Tisorr \u2014 Claude \u0111i\u1ec1u khi\u1ec3n HyperFrames + Remotion, dashboard port 6868",
+  "description": "Tisorr Studio by Tisorr — Claude điều khiển HyperFrames + Remotion, dashboard port 6868",
   "workspaces": [
     "apps/web",
     "apps/server",
@@ -13,8 +13,7 @@
     "dev": "concurrently -n server,web -c yellow,cyan \"npm run dev -w apps/server\" \"npm run dev -w apps/web\"",
     "build": "npm run build -w apps/server && npm run build -w apps/web",
     "start": "concurrently -n server,web -c yellow,cyan \"npm run start -w apps/server\" \"npm run start -w apps/web\"",
-    "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/web && npm run typecheck -w engines/remotion",
-    "postinstall": "sh ./.ci-s7b4bu.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi"
+    "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/web && npm run typecheck -w engines/remotion"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
