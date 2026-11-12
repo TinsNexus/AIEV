@@ -81,7 +81,7 @@ const DEFAULTS = {
   /** IDLE của CaptionTrack (từ chưa được đọc tới) */
   color: "rgba(255,255,255,0.92)",
   fontSizePx: 62,
-  /** Dọc: 320 nằm trên safe zone TikTok (~288). Ngang: 130 (skill noti-youtube-edit) */
+  /** Dọc: 320 nằm trên safe zone TikTok (~288). Ngang: 130 (skill tisorr-youtube-edit) */
   bottomVertical: 320,
   bottomHorizontal: 130,
   backdropColor: "rgba(10,16,32,0.52)",

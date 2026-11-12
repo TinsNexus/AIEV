@@ -90,7 +90,7 @@ const Cue: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
   const vertical = height >= width;
   const u = vertical ? height / 1920 : height / 1080;
   // Dọc: 320 nằm trên safe zone TikTok (~288). Ngang: caption cách đáy
-  // ~110–150px (skill noti-youtube-edit) → base 130.
+  // ~110–150px (skill tisorr-youtube-edit) → base 130.
   const bottomBase = vertical ? 320 : 130;
 
   // Vào 4 frame / ra 4 frame để không "bật tắt" cứng giữa hai cụm.

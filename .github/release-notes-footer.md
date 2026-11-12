@@ -25,7 +25,7 @@ On the first run the script checks your environment, installs what it can, insta
 
 **Requirements:** Node.js 22+, FFmpeg on PATH, Google Chrome. You need to be signed in to Claude Code on the machine, or have an `ANTHROPIC_API_KEY`; image generation additionally needs a `GEMINI_API_KEY`.
 
-Full documentation: [English README](https://github.com/notivn/AIEV/blob/main/README.md) · [README tiếng Việt](https://github.com/notivn/AIEV/blob/main/README.vi.md)
+Full documentation: [English README](https://github.com/tinnt-truman/AIEV/blob/main/README.md) · [README tiếng Việt](https://github.com/tinnt-truman/AIEV/blob/main/README.vi.md)
 
 ### Hướng dẫn chạy (tiếng Việt)
 
@@ -35,4 +35,4 @@ Tải bản ZIP thay vì `git clone` thì lần đầu cần chạy `chmod +x st
 
 Dừng bằng `start\stop.bat` / `start/stop.command` / `./start/stop.sh`. Cập nhật thủ công bằng `update\update.bat` / `update/update.command` / `bash update/update.sh`, nhưng bình thường chỉ cần bấm nút cập nhật trên dashboard. **Bản ZIP không tự cập nhật được** (không có thư mục `.git`) - dùng lâu dài thì nên `git clone`.
 
-Yêu cầu: Node.js 22+, FFmpeg trên PATH, Google Chrome. Cần đăng nhập Claude Code trên máy hoặc có `ANTHROPIC_API_KEY`; phần tạo ảnh cần thêm `GEMINI_API_KEY`. Hướng dẫn đầy đủ: [README tiếng Việt](https://github.com/notivn/AIEV/blob/main/README.vi.md).
+Yêu cầu: Node.js 22+, FFmpeg trên PATH, Google Chrome. Cần đăng nhập Claude Code trên máy hoặc có `ANTHROPIC_API_KEY`; phần tạo ảnh cần thêm `GEMINI_API_KEY`. Hướng dẫn đầy đủ: [README tiếng Việt](https://github.com/tinnt-truman/AIEV/blob/main/README.vi.md).

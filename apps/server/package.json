@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Backend AI Edit Video — Agent SDK + render queue + SQLite (port 6869)",
+  "description": "Backend Tisorr Studio — Agent SDK + render queue + SQLite (port 6869)",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",

@@ -1,9 +1,9 @@
 {
-  "name": "ai-edit-video",
+  "name": "tisorr-studio",
   "license": "MIT",
   "version": "0.1.0",
   "private": true,
-  "description": "AI Edit Video by noti.vn — Claude điều khiển HyperFrames + Remotion, dashboard port 6868",
+  "description": "Tisorr Studio by Tisorr — Claude điều khiển HyperFrames + Remotion, dashboard port 6868",
   "workspaces": [
     "apps/web",
     "apps/server",

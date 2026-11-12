@@ -1,4 +1,4 @@
-# Khởi động AI Edit Video
+# Khởi động Tisorr Studio
 
 ## Chạy hệ thống
 
@@ -45,7 +45,7 @@ thì sửa đúng một chỗ.
 
 ## Dừng hệ thống
 
-- Windows: nhấp đúp **`stop.bat`** (hoặc đóng cửa sổ "AI Edit Video - LOG")
+- Windows: nhấp đúp **`stop.bat`** (hoặc đóng cửa sổ "Tisorr Studio - LOG")
 - macOS: nhấp đúp **`stop.command`**
 - Linux: `./start/stop.sh`
 

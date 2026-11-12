@@ -1,0 +1,29 @@
+[Unit]
+Description=Tisorr Studio - web dashboard (6868) + backend API (6869)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# User/Group của tiến trình chạy app - KHÔNG phải user SSH của deploy.sh, tuy
+# trên máy bạn hai cái đang trùng nhau (root). Nếu sau này tách lại user
+# "deploy" riêng cho an toàn hơn thì đổi 2 dòng này về "deploy" và chown lại
+# /opt/tisorr-studio.
+User=root
+Group=root
+WorkingDirectory=/opt/tisorr-studio
+# npm run start ở root chạy "concurrently" cả server (dist/index.js) lẫn web
+# (next start) trong một tiến trình cha - đúng như start.sh dùng khi chạy tay.
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+# systemd không kế thừa PATH của shell đăng nhập - liệt kê đủ chỗ ffmpeg/
+# ffprobe, Chrome (Puppeteer dùng để render HyperFrames/Remotion) và python
+# (faster-whisper) đã cài, xem deploy/vps-setup.sh. Sửa lại nếu bạn cài ở chỗ khác.
+Environment=NODE_ENV=production
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+StandardOutput=append:/opt/tisorr-studio/start/server.log
+StandardError=append:/opt/tisorr-studio/start/server.log
+
+[Install]
+WantedBy=multi-user.target

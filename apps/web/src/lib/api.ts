@@ -752,6 +752,118 @@ export class ApiError extends Error {
   }
 }
 
+// ============ Đăng nhập / phiên ============
+
+/** Vai trò - phải khớp UserRole của backend (apps/server/src/db.ts) */
+export type UserRole = "admin" | "editor" | "viewer";
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  displayName: string;
+  role: UserRole;
+  status: "active" | "disabled";
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface AuthState {
+  authenticated: boolean;
+  /** Chưa có tài khoản nào - phải qua màn hình dựng admin đầu tiên */
+  needsSetup: boolean;
+  /**
+   * "session" = đăng nhập bằng tài khoản; "machine" = đang đi bằng quyền máy
+   * chủ (mở dashboard ngay trên máy, hoặc link `?t=`) nên không có bản ghi user.
+   */
+  via: "session" | "machine" | "upload" | null;
+  role: UserRole | null;
+  user: AuthUser | null;
+}
+
+/** GET /api/auth/me - luôn 200, kể cả khi chưa đăng nhập */
+export function fetchAuthState(): Promise<AuthState> {
+  return request<AuthState>("/api/auth/me");
+}
+
+export function authLogin(username: string, password: string): Promise<{ user: AuthUser }> {
+  return post<{ user: AuthUser }>("/api/auth/login", { username, password });
+}
+
+export function authLogout(): Promise<void> {
+  return post<void>("/api/auth/logout");
+}
+
+export function authSetup(input: {
+  code: string;
+  username: string;
+  password: string;
+  displayName?: string;
+}): Promise<{ user: AuthUser }> {
+  return post<{ user: AuthUser }>("/api/auth/setup", input);
+}
+
+export function authChangePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  return post<void>("/api/auth/password", { currentPassword, newPassword });
+}
+
+// ============ Quản lý người dùng (admin) ============
+
+/** Một dòng nhật ký "ai làm gì" - GET /api/users/audit/log */
+export interface AuditEntry {
+  id: number;
+  at: string;
+  userId: string | null;
+  username: string;
+  action: string;
+  target: string;
+  ip: string;
+  detail: string;
+}
+
+export async function listUsers(): Promise<AuthUser[]> {
+  const res = await request<{ users: AuthUser[] }>("/api/users");
+  return res.users;
+}
+
+export async function createUserAccount(input: {
+  username: string;
+  password: string;
+  role: UserRole;
+  displayName?: string;
+}): Promise<AuthUser> {
+  const res = await post<{ user: AuthUser }>("/api/users", input);
+  return res.user;
+}
+
+export async function updateUserAccount(
+  id: string,
+  patch: { role?: UserRole; status?: "active" | "disabled"; displayName?: string }
+): Promise<AuthUser> {
+  const res = await jsonBody<{ user: AuthUser }>(
+    `/api/users/${encodeURIComponent(id)}`,
+    "PATCH",
+    patch
+  );
+  return res.user;
+}
+
+export function resetUserPassword(id: string, newPassword: string): Promise<void> {
+  return post<void>(`/api/users/${encodeURIComponent(id)}/password`, { newPassword });
+}
+
+export function deleteUserAccount(id: string): Promise<void> {
+  return request<void>(`/api/users/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listAuditLog(limit = 100): Promise<AuditEntry[]> {
+  const res = await request<{ entries: AuditEntry[] }>(`/api/users/audit/log?limit=${limit}`);
+  return res.entries;
+}
+
 // ============ Token truy cập backend ============
 
 /**
@@ -764,15 +876,15 @@ export class ApiError extends Error {
  *    (không qua proxy Next) nên backend trả kèm `apiToken`. Chỉ trình duyệt
  *    chạy trên chính máy chủ mới lấy được.
  *
- * Token được gắn vào: header `x-aiev-token` (mọi fetch) VÀ cookie `aiev_token`
+ * Token được gắn vào: header `x-xts-token` (mọi fetch) VÀ cookie `xts_token`
  * (để <img>/<video>/EventSource - thứ không set được header - vẫn qua được).
  *
  * Trang /m trên điện thoại KHÔNG dùng token này: nó đi bằng token phiên QR
  * (`?k=`) mà backend chỉ cho xem project + upload asset.
  */
-const TOKEN_KEY = "aiev_api_token";
+const TOKEN_KEY = "xts_api_token";
 /** Tên cookie PHẢI khớp với middleware xác thực của backend (index.ts) */
-const TOKEN_COOKIE = "aiev_token";
+const TOKEN_COOKIE = "xts_token";
 
 let apiToken: string | null = null;
 let tokenPromise: Promise<string | null> | null = null;
@@ -855,7 +967,7 @@ function withUploadToken(path: string): string {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await ensureToken();
   const headers = new Headers(init?.headers);
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -1285,7 +1397,7 @@ export async function generateSkill(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { "x-aiev-token": token } : {}),
+        ...(token ? { "x-xts-token": token } : {}),
       },
       body: JSON.stringify(input),
     });
@@ -1737,7 +1849,7 @@ export function closePhoneSessionOnUnload(uploadToken: string | null, stopAuto: 
   // lúc trang đang chết thì không kịp await ensureToken()
   const token = apiToken;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["x-aiev-token"] = token;
+  if (token) headers["x-xts-token"] = token;
   if (uploadToken) {
     void fetch(`/api/upload-session/${encodeURIComponent(uploadToken)}`, {
       method: "DELETE",
@@ -1767,7 +1879,7 @@ export const revealFile = (relPath: string) =>
 /**
  * Đường dẫn phát file qua backend, relPath tính từ repo root. Phòng thủ với dữ
  * liệu lệch kiểu (AI ghi meta sai hợp đồng).
- * Xác thực: dashboard đi bằng cookie `aiev_token` (ensureToken đã set trước khi
+ * Xác thực: dashboard đi bằng cookie `xts_token` (ensureToken đã set trước khi
  * dữ liệu về); trang /m trên điện thoại gắn thêm `?k=` của phiên QR.
  */
 export const mediaUrl = (relPath: string) =>
@@ -1901,7 +2013,7 @@ export const createSubtitles = (projectId: string) =>
 
 /**
  * Link TẢI phụ đề - dùng cho <a download>, không qua fetch nên không set được
- * header token: dashboard đi bằng cookie `aiev_token` (ensureToken đã set),
+ * header token: dashboard đi bằng cookie `xts_token` (ensureToken đã set),
  * trang /m gắn thêm `?k=` giống mediaUrl.
  * `version` để trình duyệt không trả file .srt cũ trong cache sau khi soạn lại.
  */
@@ -3062,7 +3174,7 @@ export async function previewTtsVoice(input: {
 }): Promise<Blob> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -3113,7 +3225,7 @@ export async function previewClonedVoice(input: {
 }): Promise<Blob> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {
@@ -3589,7 +3701,7 @@ export async function dubPreviewTranslateVideo(
 ): Promise<DubPreviewResult> {
   const token = await ensureToken();
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) headers.set("x-aiev-token", token);
+  if (token) headers.set("x-xts-token", token);
 
   let res: Response;
   try {

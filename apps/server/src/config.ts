@@ -65,37 +65,55 @@ export function upsertEnvVar(name: string, value: string | null): void {
 let cachedApiToken: string | null = null;
 
 /**
- * Token xác thực API dùng chung (AIEV_API_TOKEN trong .env).
+ * Token xác thực API dùng chung (XTS_API_TOKEN trong .env).
  * Chưa có → tự sinh và ghi vào .env ngay lần gọi đầu, nên máy mới clone repo
  * không phải cấu hình gì. Mọi request KHÔNG phải loopback trực tiếp đều phải
- * kèm token này (header `x-aiev-token`, query `?t=`, hoặc cookie `aiev_token`),
+ * kèm token này (header `x-xts-token`, query `?t=`, hoặc cookie `xts_token`),
  * trừ đường upload từ điện thoại dùng token phiên QR (`?k=`).
  */
 export function apiToken(): string {
   if (cachedApiToken) return cachedApiToken;
-  const fromEnv = (process.env.AIEV_API_TOKEN ?? "").trim();
+  const fromEnv = (process.env.XTS_API_TOKEN ?? "").trim();
   if (fromEnv) {
     cachedApiToken = fromEnv;
     return cachedApiToken;
   }
   const generated = nanoid(32);
   try {
-    upsertEnvVar("AIEV_API_TOKEN", generated);
+    upsertEnvVar("XTS_API_TOKEN", generated);
   } catch (err) {
     // Không ghi được .env (read-only) - vẫn chạy được trong phiên này
     console.warn(
-      `[config] Không ghi được AIEV_API_TOKEN vào .env: ${err instanceof Error ? err.message : String(err)}`,
+      `[config] Không ghi được XTS_API_TOKEN vào .env: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
-  process.env.AIEV_API_TOKEN = generated;
+  process.env.XTS_API_TOKEN = generated;
   cachedApiToken = generated;
   return generated;
 }
 
 /**
+ * Đăng nhập subscription Claude Code trên máy có hay không - đúng HAI nơi có
+ * thể chứa nó: file ~/.claude/.credentials.json (Windows/Linux, hoặc
+ * CLAUDE_CONFIG_DIR nếu đặt khác) HOẶC macOS Keychain (Claude Code trên macOS
+ * không ghi ra file, ghi thẳng vào Keychain). Đây là NGUỒN SỰ THẬT DUY NHẤT -
+ * đừng tự viết lại phần này ở chỗ khác (routes/connections.ts từng có bản
+ * chỉ-check-file riêng, quên phần Keychain, khiến trang Kết nối báo "chưa kết
+ * nối" trên macOS dù hasClaudeAuth() ở đây vẫn trả true và chat vẫn chạy được).
+ */
+export function claudeSubscriptionOAuthPresent(): boolean {
+  const configDir =
+    process.env.CLAUDE_CONFIG_DIR ||
+    path.join(process.env.USERPROFILE || process.env.HOME || "", ".claude");
+  if (fs.existsSync(path.join(configDir, ".credentials.json"))) return true;
+  // macOS: Claude Code lưu OAuth trong Keychain, KHÔNG có .credentials.json
+  return darwinKeychainHasClaudeCreds();
+}
+
+/**
  * Có xác thực Claude cho Agent SDK không - theo thứ tự SDK tự nhận:
  * env key (API key / OAuth token / gateway token) hoặc đăng nhập subscription
- * của Claude Code trên máy (~/.claude/.credentials.json, hoặc CLAUDE_CONFIG_DIR).
+ * của Claude Code trên máy (xem claudeSubscriptionOAuthPresent).
  */
 export function hasClaudeAuth(): boolean {
   if (
@@ -105,12 +123,7 @@ export function hasClaudeAuth(): boolean {
   ) {
     return true;
   }
-  const configDir =
-    process.env.CLAUDE_CONFIG_DIR ||
-    path.join(process.env.USERPROFILE || process.env.HOME || "", ".claude");
-  if (fs.existsSync(path.join(configDir, ".credentials.json"))) return true;
-  // macOS: Claude Code lưu OAuth trong Keychain, KHÔNG có .credentials.json
-  return darwinKeychainHasClaudeCreds();
+  return claudeSubscriptionOAuthPresent();
 }
 
 // Cache kết quả tra Keychain 60s - health poll mỗi 30s, không spawn security liên tục

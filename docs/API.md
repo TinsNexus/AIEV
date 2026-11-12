@@ -8,6 +8,88 @@
 - Thời gian: ISO 8601 string. ID job: `job_<nanoid>`. ID chat session: `sess_<nanoid>`.
 - Project ID = tên folder trong `video-projects/` (kebab-case). `meta.json` trên đĩa là nguồn sự thật về project; DB (SQLite) chỉ lưu jobs + chat.
 
+## Xác thực & phân quyền (auth & authz)
+
+Mọi endpoint dưới đây đều đi qua MỘT cửa duy nhất: middleware ở `apps/server/src/index.ts` xác
+định **danh tính** rồi đối chiếu với **bảng chính sách** `apps/server/src/policy.ts`.
+
+**Ba danh tính:**
+
+| Danh tính | Là gì | Vai trò hiệu lực |
+|---|---|---|
+| `session` | Cookie `xts_sid` (HttpOnly) sau khi đăng nhập | vai trò của tài khoản |
+| `machine` | Loopback trực tiếp, hoặc `XTS_API_TOKEN` (header `x-xts-token` / cookie `xts_token` / `?t=`) | `admin` |
+| `upload` | Token phiên QR `?k=` (trang `/m` trên điện thoại) | không có vai trò — chỉ đi được vài đường đã liệt kê |
+
+`machine` tồn tại vì agent Claude, script `start/` và health check của `deploy/deploy.sh` gọi API
+mà không có tài khoản nào. Đặt `XTS_DISABLE_MACHINE_TOKEN=1` trong `.env` để tắt đường token dùng
+chung sau khi đã tạo tài khoản thật (đường loopback vẫn giữ — ai có shell trên máy thì đằng nào
+cũng toàn quyền).
+
+**Ba vai trò:** `viewer` < `editor` < `admin`.
+
+| Vai trò | Được làm |
+|---|---|
+| `viewer` | Mọi `GET` (trừ các nhánh admin bên dưới) |
+| `editor` | + tạo/sửa project, upload, render, TTS, style, prompt, sound effect |
+| `admin` | + `/api/chat`, `/api/users`, `/api/connections`, `/api/update`, `/api/tunnel`, `/api/doctor`, `/api/reveal`, ghi `/api/skills`, và `DELETE /api/projects/:id` |
+
+**Mặc định TỪ CHỐI:** đường không khớp luật nào trong `policy.ts` trả 403 kể cả với admin. Thêm
+route mới thì phải khai báo quyền cho nó — cố ý làm vậy để route mới không im lặng lọt qua.
+
+```
+GET  /api/auth/me            (public — luôn 200)
+→ { authenticated: bool, needsSetup: bool, via: "session"|"machine"|"upload"|null,
+    role: "admin"|"editor"|"viewer"|null, user: User|null }
+
+POST /api/auth/login         { username, password }
+→ 200 { user: User } + Set-Cookie xts_sid   | 401 INVALID_CREDENTIALS
+                                            | 403 ACCOUNT_DISABLED
+                                            | 429 LOGIN_LOCKED (kèm Retry-After)
+POST /api/auth/logout        → 204 (idempotent)
+POST /api/auth/setup         { code, username, password, displayName? }
+→ 201 { user } + Set-Cookie | 403 BAD_SETUP_CODE | 409 SETUP_DONE
+POST /api/auth/password      { currentPassword, newPassword }  → 204 (thu hồi mọi phiên cũ)
+```
+
+`User` = `{ id, username, displayName, role, status, createdAt, updatedAt, lastLoginAt }` — **không
+bao giờ** kèm `passwordHash`.
+
+**Tài khoản admin đầu tiên:** chưa có user nào thì server in *mã cài đặt* ra log lúc khởi động
+(`journalctl -u tisorr-studio`, hoặc `start/server.log`); `/api/auth/setup` đòi đúng mã đó. Mã đổi
+mỗi lần khởi động và mất hiệu lực ngay khi đã có tài khoản — để trên domain công khai không ai
+"vào trước thì thành admin".
+
+**Phiên:** cookie `xts_sid` HttpOnly + SameSite=Lax (+ Secure khi https). DB chỉ lưu SHA-256 của
+session id. Hạn tuyệt đối 90 ngày, hạn trượt 30 ngày. Phiên chết NGAY khi tài khoản bị xoá, bị
+vô hiệu hoá, bị đổi vai trò, hoặc bị đổi/đặt lại mật khẩu.
+
+**Chống dò mật khẩu:** khoá theo cả `user:<tên>` lẫn `ip:<địa chỉ>` (8 lần sai trong 15 phút →
+khoá 15 phút), cộng rate limit 20 request/phút/IP trên `/api/auth/login` và trần 4 lần băm mật
+khẩu chạy đồng thời. Băm bằng `scrypt` của `node:crypto` (~286ms/lần đo trên VPS) — cố ý không
+dùng bcrypt/argon2 vì đó là native module, mà người dùng cài từ GitHub trên Windows.
+
+Sau nginx/proxy thì đặt `TRUST_PROXY_HOPS=1` trong `.env` để rate limit đếm đúng IP thật. Mặc
+định là 0 (không tin `X-Forwarded-For`) — tin vô điều kiện là để ai cũng tự cấp IP mới sau mỗi
+lần đoán sai.
+
+## Quản lý người dùng (admin — trang /users)
+
+```
+GET    /api/users                  → { users: User[] }
+POST   /api/users                  { username, password, role, displayName? } → 201 { user }
+PATCH  /api/users/:id              { role?, status?, displayName? } → { user }
+POST   /api/users/:id/password     { newPassword } → 204
+DELETE /api/users/:id              → 204
+GET    /api/users/audit/log?limit  → { entries: AuditEntry[] }
+```
+
+`AuditEntry` = `{ id, at, userId, username, action, target, ip, detail }`.
+
+Chặn tự khoá mình ra ngoài (409): hạ vai trò / vô hiệu hoá / xoá **admin đang hoạt động cuối
+cùng** (`LAST_ADMIN`), tự vô hiệu hoá (`SELF_DISABLE`), tự xoá (`SELF_DELETE`). Dựng lại admin
+đầu tiên đòi mã setup trong log server, không phải thứ làm được từ giao diện.
+
 ## Health & Dashboard
 
 ```
@@ -92,7 +174,7 @@ GET /api/lan-info
 Trang web `/m/<projectId>` (Next.js, không phải API) là trang upload tối giản cho điện thoại — mở qua QR
 trong modal "Kết nối điện thoại" ở card Nguồn & Asset (`http://<ip>:6868/m/<projectId>`).
 Upload từ điện thoại gọi THẲNG backend `http://<ip>:6869/api/assets` (không qua proxy Next — request dài qua proxy dễ kẹt). Server tắt `requestTimeout` cho upload dài và tự hủy request nếu 45s không nhận thêm dữ liệu (stall → SSE `upload` báo `error`).
-CORS của backend chấp nhận origin web UI trên LAN: `http://<ip-private>:6868` (localhost/127.0.0.1/192.168.x.x/10.x.x.x/172.16–31.x.x); start.ps1 mở firewall rule "AIEV API 6869".
+CORS của backend chấp nhận origin web UI trên LAN: `http://<ip-private>:6868` (localhost/127.0.0.1/192.168.x.x/10.x.x.x/172.16–31.x.x); start.ps1 mở firewall rule "XTS API 6869".
 
 ### Upload session (bảo mật link QR)
 
@@ -103,7 +185,7 @@ DELETE /api/upload-session/:token   → 204                                     
 
 URL/QR mang token qua query `?k=`; trang `/m` gửi lại qua field `token` (append TRƯỚC `file`). POST `/api/assets` từ máy KHÁC máy chủ (điện thoại LAN/tunnel - không phải loopback, hoặc có `x-forwarded-for`) bắt buộc token phiên upload hợp lệ, đúng project khi scope là `project` - sai/thiếu → `403 UPLOAD_TOKEN_INVALID` ("Link upload đã hết hạn — mở lại mã QR trên máy tính.").
 
-Ngoại lệ: request mang `AIEV_API_TOKEN` (header `x-aiev-token`, cookie `aiev_token` hoặc query `?t=`) được miễn token phiên QR. Đó là dashboard của chính chủ máy mở qua tunnel; token này vốn đã mở được cả chạy agent lẫn xóa project nên đòi thêm mã QR không thêm an toàn, chỉ chặn nhầm.
+Ngoại lệ: request mang `XTS_API_TOKEN` (header `x-xts-token`, cookie `xts_token` hoặc query `?t=`) được miễn token phiên QR. Đó là dashboard của chính chủ máy mở qua tunnel; token này vốn đã mở được cả chạy agent lẫn xóa project nên đòi thêm mã QR không thêm an toàn, chỉ chặn nhầm.
 
 **Đóng modal QR = đóng hết.** Thu hồi token, và nếu đường Internet được bật TỪ CHÍNH modal đó thì
 tắt luôn tunnel (xem [Cloudflare Tunnel](#cloudflare-tunnel-card-trên-trang-connections)). Tab bị

@@ -134,7 +134,7 @@ router.post("/generate", async (req, res) => {
   if (notes) answers.push(`- Ghi chú: ${notes}`);
 
   const promptParts: string[] = [
-    "Bạn là chuyên gia viết skill cho hệ thống AI Edit Video (HyperFrames + Remotion). Hãy soạn một file SKILL.md mới theo yêu cầu bên dưới.",
+    "Bạn là chuyên gia viết skill cho hệ thống Tisorr Studio (HyperFrames + Remotion). Hãy soạn một file SKILL.md mới theo yêu cầu bên dưới.",
     `## Chuẩn viết skill (skill-authoring)\n\n<skill-authoring>\n${authoring}\n</skill-authoring>`,
   ];
   if (baseSkillContent) {

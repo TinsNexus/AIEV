@@ -1,6 +1,6 @@
 ---
 name: video-pipeline
-description: End-to-end video production workflow for the AI Edit Video system - from the user request to the MP4 in outputs/, coordinating HyperFrames (scenes) and Remotion (assembly). Read this when starting any video or when building the backend render queue.
+description: End-to-end video production workflow for the Tisorr Studio system - from the user request to the MP4 in outputs/, coordinating HyperFrames (scenes) and Remotion (assembly). Read this when starting any video or when building the backend render queue.
 ---
 
 # Video Pipeline - from request to MP4
@@ -66,7 +66,7 @@ The server measures the latest draft with ffmpeg and returns `{ report: { status
 |---|---|---|
 | `resolution` | dimensions/fps do not match `meta.json` | re-render with the correct settings |
 | `loudness` | far off -14 LUFS | adjust the mix volume, do not fix it by pulling the peak |
-| `truepeak` | clipping (> -0.5 dBTP) | lower the source gain, see "SFX loudness and lead silence" in the `noti-tiktok-vn` skill (voice headroom before layering SFX) |
+| `truepeak` | clipping (> -0.5 dBTP) | lower the source gain, see "SFX loudness and lead silence" in the `tisorr-tiktok-vn` skill (voice headroom before layering SFX) |
 | `blackframes` | black frames in the MIDDLE of the video (leading/trailing fades are ignored) | a gap at a scene change - fix `transitionOverlap`/`durationInFrames` |
 | `freeze` | frozen picture >= 2s | the scene is missing animation, or the footage is broken |
 | `tail-silence` | silent tail > 1.2s | trim the tail |

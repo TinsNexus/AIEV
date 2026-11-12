@@ -39,7 +39,7 @@ ENTIRELY from that style. If it does not -> use the default branding of the form
 - **Main key**: the style's heading font, weight 800, size ~64–88px (at 1080w), 1 line (if too long, reduce the
   size; do not wrap to 2 lines unless <=2 words per line). Primary color or a primary→secondary gradient
   (`background-clip:text` - you MUST include the Vietnamese diacritics fix, production-verified in the
-  noti-tiktok-vn skill: `line-height: 1.0` + `padding-top: 0.5em` + `padding-bottom: 0.14em`).
+  tisorr-tiktok-vn skill: `line-height: 1.0` + `padding-top: 0.5em` + `padding-bottom: 0.14em`).
 - **Related keys**: pill/chip - font size ~38–48px weight 700, padding `14px 28px`, 999px radius,
   glass background (`rgba` of the style background + blur) or a soft accent background, text in the style's text/accent color.
 - **Readable over any footage**: behind the main key band add a soft scrim
@@ -73,7 +73,7 @@ Extract frames with ffmpeg and `Read` each image:
 
 ## Known issues
 
-- Vietnamese gradient text losing its diacritics -> apply the `line-height: 1.0` + `padding-top: 0.5em` + `padding-bottom: 0.14em` fix (verified, see noti-tiktok-vn).
+- Vietnamese gradient text losing its diacritics -> apply the `line-height: 1.0` + `padding-top: 0.5em` + `padding-bottom: 0.14em` fix (verified, see tisorr-tiktok-vn).
 - Putting a band inside `#face-wrapper` -> the key scales with the zoom and drifts out of place. The band must be a sibling.
 - The main key covering the hook title in the opening scene -> hide the main key in scenes with a large kinetic title.
 - Too many related keys flashing in a row -> viewers get tired; keep the pace at >=1 key per 4s, each key >=2.5s.

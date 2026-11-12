@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Edit Video by noti.vn - script khởi động (macOS / Linux)
+# Tisorr Studio by Tisorr - script khởi động (macOS / Linux)
 # Tự kiểm tra môi trường -> cài dependencies (lần đầu) -> chạy server + web -> mở http://localhost:6868
 set -u
 
@@ -17,7 +17,7 @@ ok()   { printf '  \033[32m[OK] %s\033[0m\n' "$1"; }
 err()  { printf '  \033[31m[LOI] %s\033[0m\n' "$1"; }
 
 echo ""
-echo "  AI Edit Video by: noti.vn"
+echo "  Tisorr Studio by: Tisorr"
 echo "  =========================="
 
 # 1. Kiểm tra Node.js >= 20

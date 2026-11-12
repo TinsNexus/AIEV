@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import type { Request } from "express";
-import { apiToken, childEnv, repoRoot } from "./config.js";
+import { SERVER_PORT, apiToken, childEnv, repoRoot } from "./config.js";
 
 /** Lỗi HTTP có mã - error handler ở index.ts sẽ trả { error: { code, message } } */
 export class HttpError extends Error {
@@ -22,6 +22,48 @@ export function nowIso(): string {
 }
 
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+/** Tên host được coi là "chính máy này" trong header `Host` */
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/**
+ * Header `Host` có trỏ đúng về loopback:SERVER_PORT không?
+ *
+ * VÌ SAO cần: chỉ kiểm socket là 127.0.0.1 KHÔNG đủ - đó chính là lỗ DNS
+ * rebinding. Kẻ tấn công dựng `evil.com` phục vụ trang trên đúng cổng 6869 với
+ * DNS TTL=0, nạn nhân mở trang, DNS rebind `evil.com` → 127.0.0.1. Từ lúc đó
+ * trang gọi `fetch('/api/health')` là SAME-ORIGIN theo mắt trình duyệt: không
+ * preflight, không header `Origin`, CORS không chặn, và đọc được body. Socket
+ * tới server đúng là loopback, không có `x-forwarded-*` → isLocalRequest cũ trả
+ * true → server trao `apiToken` cho trang của kẻ tấn công → có token là chạy
+ * được agent (Bash) = RCE.
+ *
+ * Header `Host` là thứ DUY NHẤT trong request còn giữ tên miền mà trình duyệt
+ * nghĩ nó đang gọi. Trang rebind luôn gửi `Host: evil.com:6869`, không giả được
+ * (Host là forbidden header name, JS không ghi đè được). Chặn ở đây là chặn
+ * đúng chỗ - đừng bỏ để cho "gọn".
+ */
+function hostIsLoopback(req: Request): boolean {
+  const raw = req.headers.host;
+  if (typeof raw !== "string" || raw === "") return false;
+  let hostname: string;
+  let port: string;
+  if (raw.startsWith("[")) {
+    // IPv6 literal: "[::1]:6869"
+    const close = raw.indexOf("]");
+    if (close < 0) return false;
+    hostname = raw.slice(0, close + 1);
+    port = raw.slice(close + 1).replace(/^:/, "");
+  } else {
+    const colon = raw.lastIndexOf(":");
+    hostname = colon < 0 ? raw : raw.slice(0, colon);
+    port = colon < 0 ? "" : raw.slice(colon + 1);
+  }
+  if (!LOOPBACK_HOSTNAMES.has(hostname.toLowerCase())) return false;
+  // Cổng phải khớp: cổng khác nghĩa là request đi vòng qua một listener khác
+  return port === String(SERVER_PORT);
+}
+
 
 /**
  * Request đến TRỰC TIẾP từ chính máy chủ (dashboard/agent/CLI trên localhost)?
@@ -44,7 +86,9 @@ export function isLocalRequest(req: Request): boolean {
     return false;
   }
   const addr = req.ip || req.socket.remoteAddress || "";
-  return LOOPBACK.has(addr);
+  if (!LOOPBACK.has(addr)) return false;
+  // Chống DNS rebinding - xem hostIsLoopback ở trên
+  return hostIsLoopback(req);
 }
 
 /** So sánh chuỗi bí mật theo thời gian hằng - tránh timing attack đoán token */
@@ -79,9 +123,9 @@ export function cookieValue(req: Request, name: string): string {
 export function hasMasterToken(req: Request): boolean {
   const token = apiToken();
   if (!token) return false;
-  const header = req.headers["x-aiev-token"];
+  const header = req.headers["x-xts-token"];
   if (typeof header === "string" && secretEquals(header, token)) return true;
-  if (secretEquals(cookieValue(req, "aiev_token"), token)) return true;
+  if (secretEquals(cookieValue(req, "xts_token"), token)) return true;
   const t = req.query?.t;
   return typeof t === "string" && secretEquals(t, token);
 }

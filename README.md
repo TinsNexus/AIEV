@@ -1,6 +1,6 @@
-# AIEV - AI Edit Video by [noti.vn](https://noti.vn)
+# XTS - Tisorr Studio by Tisorr
 
-[![CI](https://github.com/notivn/AIEV/actions/workflows/ci.yml/badge.svg)](https://github.com/notivn/AIEV/actions/workflows/ci.yml)
+[![CI](https://github.com/tinnt-truman/AIEV/actions/workflows/ci.yml/badge.svg)](https://github.com/tinnt-truman/AIEV/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
 
 🇬🇧 English · [🇻🇳 Tiếng Việt](README.vi.md)
@@ -101,7 +101,7 @@ install whatever it can - see [Environment check](#environment-check) below.
 ## Getting started
 
 ```bash
-git clone https://github.com/notivn/AIEV.git
+git clone https://github.com/tinnt-truman/AIEV.git
 cd AIEV
 ```
 
@@ -209,7 +209,7 @@ one place.
 On a project page, in the **Sources & Assets** card click **Connect phone** - scan the QR code with your phone camera (same WiFi as the machine running the system) to open the upload page `http://<machine-ip>:6868/m/<project>`. Videos/photos picked on the phone upload straight into the project's assets. The first time Windows asks about the firewall, choose **Allow** (the start script adds the rule automatically when it has admin rights).
 
 **Remote over 4G/5G** (not on the same WiFi):
-- **Cloudflare Tunnel** - fill `TUNNEL_DOMAIN=<your-domain>` (e.g. `aiev.noti.vn`) into `.env`, then the Connect phone QR automatically uses `https://<domain>/m/<project>` - works over 4G/5G.
+- **Cloudflare Tunnel** - fill `TUNNEL_DOMAIN=<your-domain>` (e.g. `aiev.example.com`) into `.env`, then the Connect phone QR automatically uses `https://<domain>/m/<project>` - works over 4G/5G.
 - Start the tunnel with `start\tunnel.bat` (Windows) / `./start/tunnel.sh` (macOS) - no `TUNNEL_DOMAIN` yet and it falls back to a quick tunnel with a random `trycloudflare.com` URL.
 - ⚠️ **Warning**: the dashboard has no login yet - only expose it publicly behind Cloudflare Access, or never share the link.
 
@@ -260,7 +260,7 @@ ships none of it:
 | [`assets/music/`](assets/music/README.md) | No - ships empty | Whatever your source says |
 | [`assets/styles/`](assets/styles/README.md) | No - ships empty | Your styles, fonts and logo are yours |
 | [`assets/brand-logos/`](assets/brand-logos/README.md) | Yes, 123 logos | **Trademarks of their owners**, NOT covered by MIT |
-| The **noti.vn** name and logo on the dashboard | Yes | **noti.vn trademark**, NOT covered by MIT |
+| The **Tisorr** name and logo on the dashboard | Yes | **Tisorr trademark**, NOT covered by MIT |
 
 **The sound effects ship with a condition.** Those 86 files were collected over years from assorted
 sources with no licensing records. They are here so the feature works out of the box, but **not for
@@ -279,9 +279,9 @@ someone else's style would have everyone building videos in their colours, and i
 logo, watermarking everyone's video with it. Create your first style on the Style Design page and it
 becomes the default.
 
-If you fork this, replace the noti.vn name and logo with your own: swap the PNGs in
+If you fork this, replace the Tisorr name and logo with your own: swap the PNGs in
 `apps/web/public/brand/` and run `node apps/web/scripts/build-brand.mjs`.
 
 ---
 
-Made with ❤️ by **noti.vn** - Claude directs, humans approve.
+Made with ❤️ by **Tisorr** - Claude directs, humans approve.

@@ -1,5 +1,5 @@
 ---
-name: noti-tiktok-full-text
+name: tisorr-tiktok-full-text
 description: Build a Vietnamese vertical TikTok explainer in the "MỔ XẺ PAPER AI" (AI paper dissection) format with HyperFrames (HTML/CSS/GSAP → MP4), Noti.vn style. N text scenes + PDF paper-page scenes, every piece of text a real HTML element (reveal/count-up/red highlight), animated captions, stat callouts, comparison tables, pull-quotes. Picks sound effects itself by content + timestamp from the `assets/sound-effects/` library (tag `hay-dung`) and wires them into the video. The fix for Vietnamese text losing diacritics is built in. Use when the user brings a transcript + paper page images + figures and wants a paper dissection/explainer video.
 ---
 
@@ -93,7 +93,7 @@ Every sub-comp (`data-composition-src`) renders in its own context, inheriting N
 
 ## COMPONENTS (reusable)
 1. **Page counter** top left "01 / 12", grey, wide letter-spacing.
-2. **Never add your own corner logo/watermark** - the Remotion assembly layer stamps the Style Design logo automatically when the style has one (adding your own means two logos stacked). No "@noti.vn" text, no TikTok text; leave the bottom right corner empty.
+2. **Never add your own corner logo/watermark** - the Remotion assembly layer stamps the Style Design logo automatically when the style has one (adding your own means two logos stacked). No "@Tisorr" text, no TikTok text; leave the bottom right corner empty.
 3. **Animated caption** bottom center, chunks of 3–6 words on their timestamps, one keyword in orange-red, fade+slide-up 0.25s (obeying the no-overlapping-lines rule above).
 4. **Stat callout** "95.8% → 58.3%": big figures at 900, the bad number in orange-red, the → arrow in orange-red, count-up as it appears.
 5. **List item**: a huge "01" + title + grey sub-label, with a vertical blue gradient bar on the left.

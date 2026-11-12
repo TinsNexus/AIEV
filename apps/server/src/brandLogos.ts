@@ -84,7 +84,7 @@ const ALLOWED_HOSTS = new Set([
 ]);
 
 /** Wikimedia yêu cầu User-Agent có thông tin liên hệ, thiếu là bị chặn (đã dính) */
-const UA = "AIEV/1.0 (https://github.com/notivn/AIEV; brand logo fetch)";
+const UA = "XTS/1.0 (https://github.com/tinnt-truman/AIEV; brand logo fetch)";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20_000;

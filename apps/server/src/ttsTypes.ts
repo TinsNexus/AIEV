@@ -100,10 +100,12 @@ export const CLONE_REF_MAX_SEC = 30;
 
 /** Câu đọc thử - CỐ Ý NGẮN, xem ghi chú ở routes/tts.ts */
 export const PREVIEW_TEXT: Record<"vi" | "en", string> = {
-  // Viết "noi ti chấm vn" theo lối phát âm: để nguyên "noti.vn" thì model đọc
-  // thành "noti chấm vi-en" hoặc nuốt luôn - đã nghe thấy trong bản thử.
-  vi: "Đây là hệ Edit video AI by noi ti chấm vn",
-  en: "This is an AI video editing system by noti dot vn",
+  // Viết "Ti-sơ" theo lối phát âm: để nguyên "Tisorr" thì model đọc thành
+  // "Ti-so-rờ-rờ" (nhấn hai chữ r cuối) hoặc nuốt hẳn âm cuối. Dấu gạch nối
+  // tách âm tiết là thứ model bám theo - đừng bỏ cho "sạch mắt".
+  // Ghi chú cũ (thương hiệu noti.vn): cùng một lỗi, cùng một cách chữa.
+  vi: "Đây là hệ Edit video AI by Ti-sơ Studio",
+  en: "This is an AI video editing system by Tisorr Studio",
 };
 
 export function previewTextFor(lang: unknown): string {

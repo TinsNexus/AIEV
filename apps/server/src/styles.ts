@@ -63,7 +63,7 @@ const legacyFilePath = () => path.join(paths.brandDir, "design-system.json");
  * có style nào trên đĩa.
  *
  * KHÔNG mang tên hay nhận diện của một thương hiệu cụ thể. Trước đây hàm này
- * trả về id "noti-vn" / name "noti.vn", nghĩa là mọi bản fork đều nhận sẵn tên
+ * trả về id "noti-vn" / name "Tisorr", nghĩa là mọi bản fork đều nhận sẵn tên
  * thương hiệu của người khác ngay trong mã nguồn - đúng thứ vừa được dọn khỏi
  * repo ở tầng dữ liệu (assets/styles/ không còn được commit). Bảng màu thì giữ
  * vì màu không thuộc về ai; cái phải đổi là cái TÊN.
@@ -215,7 +215,7 @@ export function styleExists(id: string): boolean {
 
 /**
  * Lấy style theo id, không có/không tìm thấy → style default.
- * Chưa có style nào → style mặc định noti.vn on-the-fly (không ghi đĩa).
+ * Chưa có style nào → style mặc định Tisorr on-the-fly (không ghi đĩa).
  */
 export function getStyle(id?: string | null): StyleDesign {
   const data = readStyles();

@@ -40,7 +40,7 @@ export const zoomKeySchema = z.looseObject({
 });
 
 /**
- * Chuyển động camera trên footage (skill noti-tiktok-vn — chống video tĩnh).
+ * Chuyển động camera trên footage (skill tisorr-tiktok-vn — chống video tĩnh).
  * Zoom = scale trên DIV BỌC, không bao giờ animate kích thước thẻ video.
  * Wrapper `overflow: hidden` + video `object-fit: cover` nên scale ≥ 1 không lộ mép.
  */
@@ -233,7 +233,7 @@ export const manifestSchema = z.looseObject({
   subtitleStyle: subtitleStyleSchema.optional(),
   /**
    * Thẻ "làm nổi bật key chính" overlay trên footage — dùng khi brief tắt phụ
-   * đề nhưng vẫn cần key nổi bật lúc video chạy (skill noti-tiktok-vn).
+   * đề nhưng vẫn cần key nổi bật lúc video chạy (skill tisorr-tiktok-vn).
    * Rỗng = không overlay.
    */
   overlays: z.array(highlightCueSchema).default([]),

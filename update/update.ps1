@@ -1,4 +1,4 @@
-﻿# AI Edit Video - cập nhật bản mới nhất từ GitHub rồi khởi động lại
+﻿# Tisorr Studio - cập nhật bản mới nhất từ GitHub rồi khởi động lại
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
@@ -17,7 +17,7 @@ function Stop-UpdateLog {
 Write-Host ("===== " + (Get-Date -Format "yyyy-MM-dd HH:mm:ss") + " - bắt đầu cập nhật =====")
 
 Write-Host ""
-Write-Host "  AI Edit Video - CAP NHAT" -ForegroundColor White
+Write-Host "  Tisorr Studio - CAP NHAT" -ForegroundColor White
 Write-Host "  =========================" -ForegroundColor DarkGray
 
 # 1. Kéo bản mới TRƯỚC KHI dừng hệ thống - pull fail thì hệ thống cũ vẫn chạy

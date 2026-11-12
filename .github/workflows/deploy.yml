@@ -1,0 +1,83 @@
+name: Deploy
+
+# Kích hoạt: chạy tay (workflow_dispatch), trỏ tới một branch (hoặc tag/commit
+# SHA) rồi deploy đúng HEAD của ref đó. Không cần tạo GitHub Release trước.
+# Không tự deploy theo mỗi push - luôn phải bấm Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch (hoặc tag/commit) cần deploy"
+        required: true
+        default: "develop"
+        type: string
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Build lại đúng commit ở đầu ref trước khi đụng vào VPS, phòng branch đang
+  # đỏ CI mà vẫn lỡ tay deploy.
+  verify:
+    name: Verify branch builds
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ inputs.ref }}
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+  # SSH vào VPS rồi gọi deploy/deploy.sh - script lo hết phần còn lại
+  # (checkout ref, build, restart systemd, health-check). Cần SSH key đã có
+  # sẵn trong authorized_keys và firewall VPS cho phép IP của GitHub Actions
+  # runner (dải IP động - xem https://api.github.com/meta, khoá "actions").
+  deploy:
+    name: Deploy to VPS
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: tinnt-vps-pro
+    steps:
+      # Debug: in IP thật của runner ra log. Runner GitHub-hosted đổi IP mỗi
+      # lần chạy (dải động, xem api.github.com/meta khoá "actions") - nếu SSH
+      # deploy lỗi "connection reset by peer" khi handshake, IP in ra đây
+      # chính là IP bị firewall/fail2ban trên VPS chặn. Không phải bí mật,
+      # in thẳng ra log public cũng không sao.
+      - name: Print runner IP (debug firewall)
+        run: |
+          echo "Runner IP: $(curl -s https://api.ipify.org || curl -s https://ifconfig.me)"
+
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            REPO_PATH="${{ secrets.VPS_PATH }}"
+            REPO_PATH="${REPO_PATH:-/opt/tisorr-studio}"
+            if [ ! -d "$REPO_PATH/.git" ]; then
+              mkdir -p "$(dirname "$REPO_PATH")"
+              git clone https://github.com/tinnt-truman/AIEV.git "$REPO_PATH"
+            fi
+            bash "$REPO_PATH/deploy/deploy.sh" "${{ needs.verify.outputs.sha }}"

@@ -1,6 +1,6 @@
 ---
-name: noti-youtube-edit
-description: Build a Vietnamese landscape 16:9 YouTube video (1920×1080) with HyperFrames (HTML/CSS/GSAP → MP4), keeping the Noti.vn/GĐT branding inherited from noti-tiktok-vn. Supports 2 modes - A) talking-head + motion graphics (full-frame face, camera move to PiP, karaoke captions) and B) full-text explainer (text scenes + slides/charts, no face on screen). Includes the "camera move" technique (animate the wrapper, never the video), the fix for Vietnamese text losing diacritics, and picking sound effects itself by content + timestamp from the `assets/sound-effects/` library (tag `hay-dung`) and wiring them into the video (mandatory on every video). Use when the user brings a Vietnamese clip/transcript and wants a landscape YouTube video that keeps the dark fintech blue branding.
+name: tisorr-youtube-edit
+description: Build a Vietnamese landscape 16:9 YouTube video (1920×1080) with HyperFrames (HTML/CSS/GSAP → MP4), keeping the Noti.vn/GĐT branding inherited from tisorr-tiktok-vn. Supports 2 modes - A) talking-head + motion graphics (full-frame face, camera move to PiP, karaoke captions) and B) full-text explainer (text scenes + slides/charts, no face on screen). Includes the "camera move" technique (animate the wrapper, never the video), the fix for Vietnamese text losing diacritics, and picking sound effects itself by content + timestamp from the `assets/sound-effects/` library (tag `hay-dung`) and wiring them into the video (mandatory on every video). Use when the user brings a Vietnamese clip/transcript and wants a landscape YouTube video that keeps the dark fintech blue branding.
 ---
 
 # YouTube Edit 16:9 - the Noti.vn / GĐT standard
@@ -19,7 +19,7 @@ keeps only PROCESS: step order, cutting, captions/keys, draft→final, QC. Do no
 visuals into the video style - half-and-half is exactly the failure this rule exists to prevent.
 
 This skill builds **landscape 16:9** YouTube videos with HyperFrames (HTML/CSS/JS + GSAP → MP4).
-Architecture: face cam + overlay beats + camera move/PiP; the **branding** is inherited from `noti-tiktok-vn` (Noti.vn dark fintech blue). It differs from `noti-tiktok-vn` only in the **landscape 16:9 frame** instead of vertical 9:16.
+Architecture: face cam + overlay beats + camera move/PiP; the **branding** is inherited from `tisorr-tiktok-vn` (Noti.vn dark fintech blue). It differs from `tisorr-tiktok-vn` only in the **landscape 16:9 frame** instead of vertical 9:16.
 
 **Project structure:** scaffold with `npx hyperframes init`, then follow the layout in the `video-pipeline` skill (`index.html` + `compositions/` + `assets/` + `renders/` + `hyperframes.json` + `meta.json`). The Noti.vn branding (colors/fonts/glass) is written out in the STYLE section below, and the SFX timestamp wiring in the SOUND EFFECT section - you do not need an example project for either.
 (`video-projects/sapo/` and `video-projects/mcp-tiktok-2/` are example projects on the author's machine, NOT shipped with the repo - `video-projects/` is gitignored.)
@@ -32,8 +32,8 @@ Architecture: face cam + overlay beats + camera move/PiP; the **branding** is in
 Video editor working in HyperFrames. Compose HTML/CSS/JS, animate with GSAP, render a **landscape 1920×1080** MP4. Noti.vn branding.
 
 ## TWO MODES (pick by the user's input)
-- **Mode A - Talking-head + motion graphics** (the default when the user brings a single clip of someone speaking): the face video runs full-frame in the background, animated text + karaoke captions overlay on top, and a **camera move** shrinks the face into a PiP whenever the graphics take the stage. (`noti-tiktok-vn` style, landscape frame.)
-- **Mode B - Full-text explainer** (when the user brings a transcript + slides/images/figures and there is NO face on screen): N text scenes + slide/chart scenes, every piece of text a real HTML element. (≈ the `noti-tiktok-full-text` logic but in a landscape layout.)
+- **Mode A - Talking-head + motion graphics** (the default when the user brings a single clip of someone speaking): the face video runs full-frame in the background, animated text + karaoke captions overlay on top, and a **camera move** shrinks the face into a PiP whenever the graphics take the stage. (`tisorr-tiktok-vn` style, landscape frame.)
+- **Mode B - Full-text explainer** (when the user brings a transcript + slides/images/figures and there is NO face on screen): N text scenes + slide/chart scenes, every piece of text a real HTML element. (≈ the `tisorr-tiktok-full-text` logic but in a landscape layout.)
 
 Ask the user if it is unclear. Both modes SHARE: branding, font fixes, transcription, **SFX (mandatory)**, render contract, environment.
 
@@ -111,7 +111,7 @@ mainTl.to("#face-wrapper",
 
 ---
 
-## 🔀 SCENE TRANSITIONS (GSAP, from noti-tiktok-vn)
+## 🔀 SCENE TRANSITIONS (GSAP, from tisorr-tiktok-vn)
 > When the edit prompt has a PHONG CÁCH DỰNG (video style) section, its motion spec overrides these transition/effect rules.
 
 No hard cuts. Every beat has **its own GSAP timeline** (`paused`, registered on `window.__timelines["<id>"]`). Text enters and leaves via tweens:
@@ -124,7 +124,7 @@ No hard cuts. Every beat has **its own GSAP timeline** (`paused`, registered on 
 
 ---
 
-## 🎨 STYLE (Noti.vn / GĐT) - KEEP the branding from noti-tiktok-vn
+## 🎨 STYLE (Noti.vn / GĐT) - KEEP the branding from tisorr-tiktok-vn
 - Dark background `#0A0E1A → #0F1629` (gradient) + light grain + 1–2 blue blobs (`#0061ff`,`#00c2ff`) at blur 120px drifting slowly in parallax + vignette.
 - Accent gradient on heading text: `linear-gradient(100deg, #0061ff, #00c2ff)` via `background-clip:text`.
 - Glassmorphism (edge drawn by box-shadow, NOT a hard 1px border):
@@ -138,7 +138,7 @@ No hard cuts. Every beat has **its own GSAP timeline** (`paused`, registered on 
 
 ---
 
-## ⚠️ VIETNAMESE FONT - MANDATORY (same as noti-tiktok-vn)
+## ⚠️ VIETNAMESE FONT - MANDATORY (same as tisorr-tiktok-vn)
 1. A font with full VN glyph coverage: **"Be Vietnam Pro"** (preferred) or "Inter" vietnamese subset. NEVER let it fall back to a headless Chromium system font (missing diacritics → tofu).
 2. Embed via Google Fonts vietnamese subset, `display=block` (the HyperFrames renderer fetches + caches it and injects a deterministic @font-face on its own):
    ```html
@@ -194,7 +194,7 @@ Landscape is wide → prefer horizontal layouts (unlike TikTok's vertical stack)
 
 ---
 
-## 🔊 SOUND EFFECT (MANDATORY - from noti-tiktok-full-text)
+## 🔊 SOUND EFFECT (MANDATORY - from tisorr-tiktok-full-text)
 Every video gets SFX punctuating the beats (figures, reveals, scene changes/camera moves, punchlines, CTA). Shared library: `assets/sound-effects/` (from inside a project: `../../assets/sound-effects/`). The recommended set = the entries tagged `hay-dung` in `assets/sound-effects/library.json`.
 
 ### Picking SFX yourself (by content + timestamp)

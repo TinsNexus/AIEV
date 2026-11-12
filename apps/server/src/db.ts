@@ -152,6 +152,63 @@ try {
   /* cột đã tồn tại */
 }
 
+/**
+ * Tài khoản + phiên đăng nhập.
+ *
+ * Trước đây hệ thống chỉ có MỘT token dùng chung (XTS_API_TOKEN): ai cầm được
+ * là toàn quyền, không biết ai đã làm gì. Bốn bảng dưới đây là nền cho auth
+ * (đăng nhập) và authz (vai trò) - xem auth.ts.
+ *
+ * `usernameLower` UNIQUE chứ không phải `username`: SQLite so sánh chuỗi có
+ * phân biệt hoa thường, để nguyên thì "Tin" và "tin" là hai tài khoản khác
+ * nhau - đúng kiểu lỗi cho phép mạo danh bằng cách đổi hoa thường.
+ */
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    username      TEXT NOT NULL,
+    usernameLower TEXT NOT NULL UNIQUE,
+    displayName   TEXT NOT NULL DEFAULT '',
+    passwordHash  TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'viewer',
+    status        TEXT NOT NULL DEFAULT 'active',
+    createdAt     TEXT NOT NULL,
+    updatedAt     TEXT NOT NULL,
+    lastLoginAt   TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    id            TEXT PRIMARY KEY,
+    userId        TEXT NOT NULL,
+    createdAt     TEXT NOT NULL,
+    expiresAt     TEXT NOT NULL,
+    idleExpiresAt TEXT NOT NULL,
+    lastSeenAt    TEXT NOT NULL,
+    ip            TEXT NOT NULL DEFAULT '',
+    userAgent     TEXT NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions (userId);
+
+  CREATE TABLE IF NOT EXISTS login_attempts (
+    key         TEXT PRIMARY KEY,
+    fails       INTEGER NOT NULL DEFAULT 0,
+    windowStart TEXT NOT NULL,
+    lockedUntil TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    at       TEXT NOT NULL,
+    userId   TEXT,
+    username TEXT NOT NULL DEFAULT '',
+    action   TEXT NOT NULL,
+    target   TEXT NOT NULL DEFAULT '',
+    ip       TEXT NOT NULL DEFAULT '',
+    detail   TEXT NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS idx_audit_at ON audit_log (at DESC);
+`);
+
 // ---------------------------------------------------------------- Jobs
 
 export type JobType =
@@ -690,4 +747,254 @@ export function listChatMessages(
       "SELECT role, kind, content, createdAt FROM chat_messages WHERE sessionId = ? ORDER BY id ASC",
     )
     .all(sessionId) as Array<Pick<ChatMessageRow, "role" | "kind" | "content" | "createdAt">>;
+}
+
+// ------------------------------------------------- Users, sessions, audit
+//
+// Chỉ truy cập dữ liệu thuần ở đây; băm mật khẩu, vòng đời phiên và middleware
+// nằm ở auth.ts (cùng lối chia như jobs: db.ts giữ SQL, queue.ts giữ logic).
+
+/** admin > editor > viewer - thứ tự so sánh nằm ở auth.ts (ROLE_RANK) */
+export type UserRole = "admin" | "editor" | "viewer";
+/** disabled = giữ lại lịch sử/audit nhưng không đăng nhập được nữa */
+export type UserStatus = "active" | "disabled";
+
+export interface UserRow {
+  id: string;
+  username: string;
+  usernameLower: string;
+  displayName: string;
+  passwordHash: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt: string | null;
+}
+
+/** Shape trả ra API - KHÔNG BAO GIỜ kèm passwordHash */
+export type UserApi = Omit<UserRow, "passwordHash" | "usernameLower">;
+
+export function userToApi(row: UserRow): UserApi {
+  const { passwordHash: _hash, usernameLower: _lower, ...rest } = row;
+  return rest;
+}
+
+export function createUser(input: {
+  id: string;
+  username: string;
+  displayName?: string;
+  passwordHash: string;
+  role: UserRole;
+}): UserRow {
+  const now = nowIso();
+  db.prepare(
+    `INSERT INTO users (id, username, usernameLower, displayName, passwordHash, role, status, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+  ).run(
+    input.id,
+    input.username,
+    input.username.toLowerCase(),
+    input.displayName ?? input.username,
+    input.passwordHash,
+    input.role,
+    now,
+    now,
+  );
+  return getUserById(input.id)!;
+}
+
+export function getUserById(id: string): UserRow | undefined {
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as UserRow | undefined;
+}
+
+/** Tra theo tên đăng nhập, KHÔNG phân biệt hoa thường (xem ghi chú ở DDL) */
+export function getUserByUsername(username: string): UserRow | undefined {
+  return db.prepare("SELECT * FROM users WHERE usernameLower = ?").get(username.toLowerCase()) as
+    | UserRow
+    | undefined;
+}
+
+export function listUsers(): UserRow[] {
+  return db.prepare("SELECT * FROM users ORDER BY createdAt ASC").all() as UserRow[];
+}
+
+export function countUsers(): number {
+  const row = db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number };
+  return row.n;
+}
+
+/**
+ * Số admin còn hoạt động. Dùng để chặn thao tác tự khoá mình ra ngoài: hạ vai
+ * trò / vô hiệu hoá / xoá admin CUỐI CÙNG là không còn ai quản trị được nữa,
+ * mà tài khoản admin đầu tiên thì phải có mã setup in ra log mới tạo lại được.
+ */
+export function countActiveAdmins(): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND status = 'active'")
+    .get() as { n: number };
+  return row.n;
+}
+
+export function setUserPassword(id: string, passwordHash: string): void {
+  db.prepare("UPDATE users SET passwordHash = ?, updatedAt = ? WHERE id = ?").run(
+    passwordHash,
+    nowIso(),
+    id,
+  );
+}
+
+export function setUserRole(id: string, role: UserRole): void {
+  db.prepare("UPDATE users SET role = ?, updatedAt = ? WHERE id = ?").run(role, nowIso(), id);
+}
+
+export function setUserStatus(id: string, status: UserStatus): void {
+  db.prepare("UPDATE users SET status = ?, updatedAt = ? WHERE id = ?").run(status, nowIso(), id);
+}
+
+export function setUserDisplayName(id: string, displayName: string): void {
+  db.prepare("UPDATE users SET displayName = ?, updatedAt = ? WHERE id = ?").run(
+    displayName,
+    nowIso(),
+    id,
+  );
+}
+
+export function touchUserLogin(id: string): void {
+  db.prepare("UPDATE users SET lastLoginAt = ? WHERE id = ?").run(nowIso(), id);
+}
+
+export function deleteUser(id: string): void {
+  db.prepare("DELETE FROM sessions WHERE userId = ?").run(id);
+  db.prepare("DELETE FROM users WHERE id = ?").run(id);
+}
+
+export interface SessionRow {
+  /** SHA-256 của session id thật - id gốc chỉ nằm trong cookie của trình duyệt */
+  id: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: string;
+  idleExpiresAt: string;
+  lastSeenAt: string;
+  ip: string;
+  userAgent: string;
+}
+
+export function insertSession(row: SessionRow): void {
+  db.prepare(
+    `INSERT INTO sessions (id, userId, createdAt, expiresAt, idleExpiresAt, lastSeenAt, ip, userAgent)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    row.id,
+    row.userId,
+    row.createdAt,
+    row.expiresAt,
+    row.idleExpiresAt,
+    row.lastSeenAt,
+    row.ip,
+    row.userAgent,
+  );
+}
+
+export function getSessionByHash(hash: string): SessionRow | undefined {
+  return db.prepare("SELECT * FROM sessions WHERE id = ?").get(hash) as SessionRow | undefined;
+}
+
+/** Gia hạn trượt + ghi nhận hoạt động (auth.ts tự giới hạn tần suất gọi) */
+export function touchSession(hash: string, idleExpiresAt: string): void {
+  db.prepare("UPDATE sessions SET lastSeenAt = ?, idleExpiresAt = ? WHERE id = ?").run(
+    nowIso(),
+    idleExpiresAt,
+    hash,
+  );
+}
+
+export function deleteSession(hash: string): void {
+  db.prepare("DELETE FROM sessions WHERE id = ?").run(hash);
+}
+
+/** Đăng xuất mọi thiết bị - gọi khi đổi mật khẩu, đổi vai trò hoặc khoá tài khoản */
+export function deleteSessionsForUser(userId: string): void {
+  db.prepare("DELETE FROM sessions WHERE userId = ?").run(userId);
+}
+
+export function listSessionsForUser(userId: string): SessionRow[] {
+  return db
+    .prepare("SELECT * FROM sessions WHERE userId = ? ORDER BY lastSeenAt DESC")
+    .all(userId) as SessionRow[];
+}
+
+/** Dọn phiên hết hạn (cả hạn tuyệt đối lẫn hạn trượt) - trả về số dòng đã xoá */
+export function pruneExpiredSessions(): number {
+  const now = nowIso();
+  const info = db
+    .prepare("DELETE FROM sessions WHERE expiresAt <= ? OR idleExpiresAt <= ?")
+    .run(now, now);
+  return info.changes;
+}
+
+export interface LoginAttemptRow {
+  key: string;
+  fails: number;
+  windowStart: string;
+  lockedUntil: string | null;
+}
+
+export function getLoginAttempt(key: string): LoginAttemptRow | undefined {
+  return db.prepare("SELECT * FROM login_attempts WHERE key = ?").get(key) as
+    | LoginAttemptRow
+    | undefined;
+}
+
+export function upsertLoginAttempt(row: LoginAttemptRow): void {
+  db.prepare(
+    `INSERT INTO login_attempts (key, fails, windowStart, lockedUntil) VALUES (?, ?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET fails = excluded.fails,
+       windowStart = excluded.windowStart, lockedUntil = excluded.lockedUntil`,
+  ).run(row.key, row.fails, row.windowStart, row.lockedUntil);
+}
+
+export function clearLoginAttempt(key: string): void {
+  db.prepare("DELETE FROM login_attempts WHERE key = ?").run(key);
+}
+
+export interface AuditRow {
+  id: number;
+  at: string;
+  userId: string | null;
+  username: string;
+  action: string;
+  target: string;
+  ip: string;
+  detail: string;
+}
+
+export function addAuditEntry(input: {
+  userId: string | null;
+  username: string;
+  action: string;
+  target?: string;
+  ip?: string;
+  detail?: string;
+}): void {
+  db.prepare(
+    `INSERT INTO audit_log (at, userId, username, action, target, ip, detail)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    nowIso(),
+    input.userId,
+    input.username,
+    input.action,
+    input.target ?? "",
+    input.ip ?? "",
+    input.detail ?? "",
+  );
+}
+
+export function listAuditEntries(limit = 100): AuditRow[] {
+  const capped = Math.max(1, Math.min(1000, limit));
+  return db
+    .prepare("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?")
+    .all(capped) as AuditRow[];
 }

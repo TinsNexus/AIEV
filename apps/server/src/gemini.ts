@@ -201,7 +201,7 @@ export function buildImagePrompt(input: {
   //
   // ĐO ĐƯỢC, ĐỪNG NỚI RA: chỉ THÊM một câu cấm là KHÔNG đủ. Lần thử đầu vẫn
   // giữ dòng "cho phép logo trang trí" bên dưới, và với prompt "bức tường có
-  // logo noti.vn" model vẽ ra ngay một monogram chữ N bóng bẩy - tức là nó theo
+  // logo Tisorr" model vẽ ra ngay một monogram chữ T bóng bẩy - tức là nó theo
   // dòng CHO PHÉP và bỏ dòng CẤM. Hai câu đá nhau thì model chọn câu dễ hơn.
   // Nên khi đã có file logo thật: bỏ HẲN nhánh cho phép, và nhắc lại lệnh cấm ở
   // cuối prompt (chỗ model bám nhất, đúng như cách chặn chữ ở dưới).

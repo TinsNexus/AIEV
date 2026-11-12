@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Kiểm tra môi trường AIEV - NGUỒN SỰ THẬT DUY NHẤT.
+ * Kiểm tra môi trường XTS - NGUỒN SỰ THẬT DUY NHẤT.
  *
  * Dùng chung cho ba nơi, để danh sách kiểm tra không bao giờ lệch nhau nữa:
  *   1. start.ps1  (Windows)   -> node start/doctor.mjs --fix
@@ -1104,7 +1104,7 @@ async function main() {
   const assumeYes = argv.includes("--yes");
   const langArg = argv.indexOf("--lang");
   const lang =
-    (langArg >= 0 ? argv[langArg + 1] : process.env.AIEV_LANG) === "en" ? "en" : "vi";
+    (langArg >= 0 ? argv[langArg + 1] : process.env.XTS_LANG) === "en" ? "en" : "vi";
   const T = TEXT[lang];
 
   /**

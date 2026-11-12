@@ -7,8 +7,9 @@
  * - rail trái (220px ↔ 56px icon), key localStorage `aiev-nav`;
  * - panel AI phải (440px ↔ dải mỏng 40px), key `aiev-panel`.
  *
- * BỀ RỘNG DO CSS QUYẾT ĐỊNH, KHÔNG DO STATE REACT. SHELL_SCRIPT chạy trước paint
- * ghi `data-nav`/`data-panel` lên <html>, globals.css đọc thẳng hai thuộc tính đó
+ * BỀ RỘNG DO CSS QUYẾT ĐỊNH, KHÔNG DO STATE REACT. SHELL_SCRIPT (trong
+ * layout.tsx) chạy trước paint ghi `data-nav`/`data-panel` lên <html>,
+ * globals.css đọc thẳng hai thuộc tính đó
  * (xem khối "App shell" ở đầu globals.css). State React ở đây chỉ để nhãn aria và
  * tooltip nói đúng trạng thái - không được dùng nó để chọn class bề rộng, làm thế
  * là mỗi lần tải trang lại nháy một khung hình đúng bằng lúc rail bung ra rồi co
@@ -47,10 +48,12 @@ import {
   Scissors,
   ScrollText,
   Settings2,
+  Users,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -61,7 +64,9 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { getHealth, type Health } from "@/lib/api";
+import { getHealth, type Health, type UserRole } from "@/lib/api";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/lib/useAuth";
 import { HardwareMeter } from "@/components/HardwareMeter";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -70,17 +75,17 @@ import { LOGO_DARK, LOGO_LIGHT } from "@/lib/brand";
 import { useT } from "@/lib/i18n";
 
 /** Mã nguồn dự án - hiện ở cuối sidebar, ngay trên badge phiên bản */
-const REPO_URL = "https://github.com/notivn/AIEV";
+const REPO_URL = "https://github.com/tinnt-truman/AIEV";
 
-const NAV_STORAGE_KEY = "aiev-nav";
-const PANEL_STORAGE_KEY = "aiev-panel";
-
-/**
- * Chống nháy layout: đọc lựa chọn gấp/mở TRƯỚC khung hình đầu tiên, đúng cách
- * THEME_SCRIPT trong layout.tsx làm với theme. Đặt làm phần tử đầu của shell nên
- * nó chạy lúc trình duyệt còn đang phân tích markup, xong trước khi có gì được vẽ.
- */
-const SHELL_SCRIPT = `try{var d=document.documentElement,n=localStorage.getItem("${NAV_STORAGE_KEY}");if(n==="collapsed"||n==="expanded")d.setAttribute("data-nav",n);if(localStorage.getItem("${PANEL_STORAGE_KEY}")==="collapsed")d.setAttribute("data-panel","collapsed")}catch(e){}`;
+// Chống nháy layout: đọc lựa chọn gấp/mở TRƯỚC khung hình đầu tiên, đúng cách
+// THEME_SCRIPT trong layout.tsx làm với theme. Script này giờ sống trong
+// layout.tsx (Server Component) chứ không phải ở đây - Shell là "use client",
+// và React coi <script> render trong cây client component như một node bị bỏ
+// qua khi client-render/hydrate (không FOUC-safe, còn báo lỗi console). Script
+// trong layout.tsx là markup HTML tĩnh nên trình duyệt chạy nó lúc phân tích
+// trang, trước khi Shell kịp vẽ khung đầu tiên - đúng ý đồ ban đầu.
+export const NAV_STORAGE_KEY = "aiev-nav";
+export const PANEL_STORAGE_KEY = "aiev-panel";
 
 /**
  * Dưới ngưỡng này rail MẶC ĐỊNH gấp lại (xem lý do con số trong globals.css).
@@ -129,9 +134,18 @@ const NAV = [
   { href: "/sfx", label: "nav.sfx", icon: AudioLines },
   { href: "/prompts", label: "nav.prompts", icon: ScrollText },
   { href: "/skills", label: "nav.skills", icon: BookOpen },
-  { href: "/config", label: "nav.config", icon: Settings2 },
-  { href: "/connections", label: "nav.connections", icon: Plug },
-] as const;
+  // `role` = vai trò TỐI THIỂU để thấy mục này. Bỏ trống = ai đăng nhập cũng
+  // thấy. Đây CHỈ để giấu thứ người dùng bấm vào cũng chỉ nhận 403 - hàng rào
+  // thật nằm ở apps/server/src/policy.ts, đừng nhầm cái này là bảo mật.
+  { href: "/config", label: "nav.config", icon: Settings2, role: "admin" },
+  { href: "/connections", label: "nav.connections", icon: Plug, role: "admin" },
+  { href: "/users", label: "nav.users", icon: Users, role: "admin" },
+] as const satisfies ReadonlyArray<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  role?: UserRole;
+}>;
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -250,6 +264,24 @@ export function ShellRightPanel({
 export function Shell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated, needsSetup, loading: authLoading, can } = useAuth();
+
+  /** Trang tự lo phần khung của mình, shell không được bọc vào */
+  const bare =
+    pathname === "/m" ||
+    pathname.startsWith("/m/") ||
+    pathname === "/login" ||
+    pathname === "/setup";
+
+  // Chưa đăng nhập thì đá về /login, kèm ?next= để quay lại đúng chỗ sau khi
+  // vào được. Đây CHỈ là trải nghiệm - chặn thật nằm ở backend, nên không cần
+  // (và không nên) cố đoán quyền ở đây.
+  useEffect(() => {
+    if (bare || authLoading || authenticated) return;
+    const next = encodeURIComponent(pathname);
+    router.replace(needsSetup ? "/setup" : `/login?next=${next}`);
+  }, [bare, authLoading, authenticated, needsSetup, pathname, router]);
 
   // Trang nào đang khai báo panel phải (null = không có) - chỉ giữ tiêu đề dạng
   // chuỗi để setState không kéo theo ReactNode và gây render vòng.
@@ -314,10 +346,20 @@ export function Shell({ children }: { children: ReactNode }) {
     [slot, register]
   );
 
-  // Trang mobile /m/<id> (điện thoại quét QR upload) - layout riêng tối giản,
-  // không header/sidebar của dashboard.
-  if (pathname === "/m" || pathname.startsWith("/m/")) {
+  // Trang mobile /m/<id> (điện thoại quét QR upload) và hai trang đăng nhập -
+  // layout riêng tối giản, không header/sidebar của dashboard.
+  if (bare) {
     return <>{children}</>;
+  }
+
+  // Chưa biết có đăng nhập hay không: giữ màn hình trống thay vì chớp nguyên
+  // dashboard rồi mới đá đi - chớp như vậy còn để lộ tên project trong tiêu đề.
+  if (authLoading || !authenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)]">{t("auth.checking")}</p>
+      </div>
+    );
   }
 
   // Nhãn dài dùng cho aria-label/tooltip; nhãn ngắn là chữ hiện cạnh icon trong
@@ -332,8 +374,6 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <ShellPanelContext.Provider value={panelApi}>
       <div className="flex h-screen flex-col">
-        <script dangerouslySetInnerHTML={{ __html: SHELL_SCRIPT }} />
-
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4">
           <Link href="/" className="flex shrink-0 items-center">
             {/* Logo đổi theo theme qua CSS trong globals.css.
@@ -343,9 +383,9 @@ export function Shell({ children }: { children: ReactNode }) {
                 Logo người dùng tải lên ở Style Design đi đường khác hẳn
                 (assets/styles → /media), chỉ dùng đóng dấu lên video. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_LIGHT} alt="noti.vn" className="logo-light h-7 w-auto" />
+            <img src={LOGO_LIGHT} alt="Tisorr" className="logo-light h-7 w-auto" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_DARK} alt="noti.vn" className="logo-dark h-7 w-auto" />
+            <img src={LOGO_DARK} alt="Tisorr" className="logo-dark h-7 w-auto" />
           </Link>
 
           {/* Nút gấp/mở rail KHÔNG còn ở header: nó nằm dưới đáy chính cái rail
@@ -372,6 +412,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <BackendStatus />
             <LanguageToggle />
             <ThemeToggle />
+            <UserMenu />
           </div>
         </header>
 
@@ -419,7 +460,7 @@ export function Shell({ children }: { children: ReactNode }) {
               className="flex flex-col gap-1"
               aria-label={t("shell.nav-aria")}
             >
-              {NAV.map(({ href, label, icon: Icon }) => {
+              {NAV.filter((n) => !("role" in n) || can(n.role)).map(({ href, label, icon: Icon }) => {
                 const text = t(label);
                 return (
                   <Link

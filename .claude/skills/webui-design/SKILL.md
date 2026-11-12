@@ -1,9 +1,9 @@
 ---
 name: webui-design
-description: Design system for the AI Edit Video web dashboard (noti.vn) - the three-step type scale, light/dark color tokens, the component primitives every page must use, Inter font, SVG icons, Shopify Admin style layout. MUST read before writing or modifying any UI in apps/web.
+description: Design system for the Tisorr Studio web dashboard (Tisorr) - the three-step type scale, light/dark color tokens, the component primitives every page must use, Inter font, SVG icons, Shopify Admin style layout. MUST read before writing or modifying any UI in apps/web.
 ---
 
-# Web UI Design System - AI Edit Video by noti.vn
+# Web UI Design System - Tisorr Studio by Tisorr
 
 The web UI is a **monitoring and management dashboard**, not a video editor. Aesthetic standard: Shopify Admin - minimal, high information density but still airy, every element has a reason to exist.
 
@@ -133,15 +133,15 @@ The handful of legitimate exceptions (a QR code needing a real white background,
 1. **Light is the default**, dark is opt-in. The toggle persists to `localStorage` and is applied via the `data-theme` attribute on `<html>`.
 2. **Icons are 100% inline SVG** - Lucide set, stroke 1.5-2px, `currentColor` so they inherit text color. No icon fonts, no PNGs, no emoji as functional icons (this includes emoji inside `<option>` labels).
 3. **Inter font** via the `@fontsource/inter` package, imported in `apps/web/src/app/layout.tsx` (weights 400/500/600/700). Bundled at build time, so self-hosted - never load fonts from a CDN at runtime.
-4. Fixed metadata: title `AI Edit Video by: noti.vn`, description `Edit video tự động bằng AI`, favicon from `public/brand/favicon.png`.
+4. Fixed metadata: title `Tisorr Studio by: Tisorr`, description `Edit video tự động bằng AI`, favicon from `public/brand/favicon.png`.
 
 ## 6. Brand assets
 
 | File in `apps/web/public/brand/` | Download source | Used when |
 |---|---|---|
-| `logo-duong-ban.png` | https://noti.vn/image/new/logo-duong-ban.png | Header in light theme |
-| `logo-am-ban.png` | https://noti.vn/image/new/logo-am-ban.png | Header in dark theme |
-| `favicon.png` | https://noti.vn/image/new/favicon.png | `<link rel="icon">` |
+| `logo-duong-ban.png` | _no domain yet — fill in the real URL once Tisorr has one, drop the file straight into `apps/web/public/brand/` for now_ | Header in light theme |
+| `logo-am-ban.png` | _same as above_ | Header in dark theme |
+| `favicon.png` | _same as above_ | `<link rel="icon">` |
 
 The logo swaps with the theme at the same moment as the tokens (same `data-theme` listener).
 

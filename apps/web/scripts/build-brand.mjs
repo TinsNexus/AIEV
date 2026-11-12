@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Nướng logo + favicon của noti.vn thẳng vào mã nguồn dưới dạng data URI.
+ * Nướng logo + favicon của Tisorr thẳng vào mã nguồn dưới dạng data URI.
  *
  * Đọc  : apps/web/public/brand/*.png   (ảnh gốc, độ phân giải cao - nguồn sự thật)
  * Ghi  : apps/web/src/lib/brand.ts     (hằng số base64, file SINH RA - đừng sửa tay)
  * Chạy : node scripts/build-brand.mjs  (chỉ khi thay logo, KHÔNG nằm trong build)
  *
  * VÌ SAO NƯỚNG VÀO CODE:
- * Nhận diện của chính ứng dụng phải luôn là nhận diện noti.vn. Để ở dạng file
+ * Nhận diện của chính ứng dụng phải luôn là nhận diện Tisorr. Để ở dạng file
  * tĩnh trong public/ thì chỉ cần chép đè ba cái PNG là đổi được logo cả app.
  * Thành hằng số biên dịch vào bundle thì thay ảnh trong public/ không còn tác
  * dụng gì nữa - muốn đổi phải sửa nguồn rồi chạy lại script này.
@@ -73,7 +73,7 @@ const body = `// FILE NÀY DO MÁY SINH RA - ĐỪNG SỬA TAY.
 // Tạo lại: cd apps/web && node scripts/build-brand.mjs
 //
 // Logo và favicon của chính ứng dụng, nướng thẳng vào bundle dưới dạng data URI
-// để nhận diện noti.vn không đổi được bằng cách chép đè file trong public/.
+// để nhận diện Tisorr không đổi được bằng cách chép đè file trong public/.
 // Logo người dùng tải lên ở Style Design là đường hoàn toàn khác (assets/styles,
 // phục vụ qua /media, chỉ dùng đóng dấu lên video) - xem scripts/build-brand.mjs.
 
